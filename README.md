@@ -126,9 +126,65 @@ wget -r -i download_cvpr_slam_test.txt
   
   MD5 hash: 009b52e7d7b224ffb8a203db294ac9fb
 
+```
+mono
+|
+--- ME000                             # monocular easy trajectory 0 
+|       |
+|       ---- 000000.png               # RGB image 000000
+|       ---- 000001.png               # RGB image 000001
+|       .
+|       .
+|       ---- 000xxx.png               # RGB image 000xxx
+|
++-- ME001                             # monocular easy trajectory 1 
+.
+.
++-- ME007                             # monocular easy trajectory 7 
+|
++-- MH000                             # monocular hard trajectory 0 
+.
+.
+|
++-- MH007                             # monocular hard trajectory 7 
+```
+
 * [Stereo track](https://tartanair.blob.core.windows.net/tartanair-testing1/tartanair-test-stereo-release.tar.gz) (Size: 17.51 GB)
 
   MD5 hash: 8a3363ff2013f147c9495d5bb161c48e
+
+```
+stereo
+|
+--- SE000                                 # stereo easy trajectory 0 
+|       |
+|       ---- image_left                   # left image folder
+|       |       |
+|       |       ---- 000000_left.png      # RGB left image 000000
+|       |       ---- 000001_left.png      # RGB left image 000001
+|       |       .
+|       |       .
+|       |       ---- 000xxx_left.png      # RGB left image 000xxx
+|       |
+|       ---- image_right                  # right image folder
+|               |
+|               ---- 000000_right.png     # RGB right image 000000
+|               ---- 000001_right.png     # RGB right image 000001
+|               .
+|               .
+|               ---- 000xxx_right.png     # RGB right image 000xxx
+|
++-- SE001                                 # stereo easy trajectory 1 
+.
+.
++-- SE007                                 # stereo easy trajectory 7 
+|
++-- SH000                                 # stereo hard trajectory 0 
+.
+.
+|
++-- SH007                                 # stereo hard trajectory 7 
+```
 
 * [Both monocular and stereo tracks](https://tartanair.blob.core.windows.net/tartanair-testing1/tartanair-test-release.tar.gz) (Size: 25.16 GB)
 
