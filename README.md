@@ -1,2 +1,153 @@
-# tartanair_tools
-TartanAir dataset tools and samples
+# TartanAir dataset: AirSim Simulation Dataset for Simultaneous Localization and Mapping
+This repository provides sample codes and scripts for accessing the training and testing data, as well as evaluation tools. Please refer to [TartanAir](http://theairlab.org/tartanair-dataset) for more information about the dataset. 
+
+## Download the training data
+
+The data is divided into two levels (Easy and Hard) in terms of the motion patterns. It is organized in trajectory folders. You can download data from different cameras (left or right), with different data types (RGB, depth, segmentation, camera pose and flow). Please see [data type](data_type.md) page for more information. 
+
+
+<p style="color:red"> <b> !! NOTE: The size of all the data is up to 3TB! It could take days to download. Please select the data type you really need before the download. You can also go to 
+<a href=http://theairlab.org/tartanair-dataset>TartanAir</a> 
+to download the sample files for a better understanding of the data types. </b> </p>
+
+###  Data directory structure
+
+```
+ROOT
+|
+--- ENV_NAME_0                             # environment folder
+|       |
+|       ---- Easy                          # difficulty level
+|       |      |
+|       |      ---- P000                   # trajectory folder
+|       |      |      |
+|       |      |      +--- depth_left      # 000000_left_depth.npy - 000xxx_left_depth.npy
+|       |      |      +--- depth_right     # 000000_right_depth.npy - 000xxx_right_depth.npy
+|       |      |      +--- flow            # 000000_000001_flow/mask.npy - 000xxx_000xxx_flow/mask.npy
+|       |      |      +--- image_left      # 000000_left.png - 000xxx_left.png 
+|       |      |      +--- image_right     # 000000_right.png - 000xxx_right.png 
+|       |      |      +--- seg_left        # 000000_left_seg.npy - 000xxx_left_seg.npy
+|       |      |      +--- seg_right       # 000000_right_seg.npy - 000xxx_right_seg.npy
+|       |      |      ---- pose_left.txt 
+|       |      |      ---- pose_right.txt
+|       |      |  
+|       |      +--- P001
+|       |      .
+|       |      .
+|       |      |
+|       |      +--- P00K
+|       |
+|       +--- Hard
+|
++-- ENV_NAME_1
+.
+.
+|
++-- ENV_NAME_N
+```
+
+### Download data
+
+We provide a python script `download_training.py` for data downloading. 
+
+* Specify the output directory
+
+  --output-dir OUTPUTDIR
+
+* Select file type:
+
+  --rgb
+
+  --depth
+
+  --seg
+
+  --flow
+
+* Select difficulty level:
+  
+  --only-hard
+
+  --only-easy
+
+  [NO TAG]: both 'hard' and 'easy' levels
+
+* Select camera:
+  
+  --only-left
+
+  --only-right
+
+  [NO TAG]: both 'left' and 'right' cameras
+
+* Select flow type when --flow is set:
+  
+  --only-flow
+
+  --only-mask
+
+  [NO TAG]: both 'flow' and 'mask' files
+
+For example, download all the RGB images from the left camera:
+
+```
+python download_training.py --output-dir OUTPUTDIR --rgb --only-left
+```
+
+Download all the depth data from both cameras in hard level: 
+
+```
+python download_training.py --output-dir OUTPUTDIR --depth --only-hard
+```
+
+Download all optical flow data without flow-mask:
+
+```
+python download_training.py --output-dir OUTPUTDIR --flow --only-flow
+```
+
+Download all the files in the dataset:
+
+```
+python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow
+```
+
+### Access the data using Azure virtual machine
+
+Yet another way to access the data is to use Azure virtual machine. In this way, you don't have to download the data to your local machine. You can use [Azure SDKs](https://github.com/Azure/azure-sdk-for-python) to access the data. [Here](TartanAir_Sample.ipynb) is a sample notebook for accessing and visualizing the data.
+
+## Download the testing data for the [CVPR Visual SLAM challenge](https://sites.google.com/view/vislocslamcvpr2020/slam-challenge)
+You can click the download links below. In Linux system, you can also run the following command to download all the files: 
+```
+wget -r -i download_cvpr_slam_test.txt
+``` 
+
+* [Monocular track](https://tartanair.blob.core.windows.net/tartanair-testing1/tartanair-test-mono-release.tar.gz) (Size: 7.65 GB)
+  
+  MD5 hash: 009b52e7d7b224ffb8a203db294ac9fb
+
+* [Stereo track](https://tartanair.blob.core.windows.net/tartanair-testing1/tartanair-test-stereo-release.tar.gz) (Size: 17.51 GB)
+
+  MD5 hash: 8a3363ff2013f147c9495d5bb161c48e
+
+* [Both monocular and stereo tracks](https://tartanair.blob.core.windows.net/tartanair-testing1/tartanair-test-release.tar.gz) (Size: 25.16 GB)
+
+  MD5 hash: ea176ca274135622cbf897c8fa462012 
+
+## Evaluation tools
+
+Coming soon!
+
+## Paper
+More technical details are available in [TartanAir paper](https://arxiv.org/abs/2003.14338). Please cite this as: 
+```
+@article{tartanair2020arxiv,
+  title =   {TartanAir: A Dataset to Push the Limits of Visual SLAM},
+  author =  {Wenshan Wang, Delong Zhu, Xiangwei Wang, Yaoyu Hu, Yuheng Qiu, Chen Wang, Yafei Hu, Ashish Kapoor, Sebastian Scherer},
+  journal = {arXiv preprint arXiv:2003.14338},
+  year =    {2020}
+}
+```
+
+## Contact 
+Email tartanair@hotmail.com if you have any questions about the data source. To post problems in the Github issue is also welcome. You can also reach out to contributors on the associated [GitHub](https://github.com/microsoft/AirSim).
