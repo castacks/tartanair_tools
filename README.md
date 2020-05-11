@@ -46,11 +46,11 @@ ROOT
 +-- ENV_NAME_N
 ```
 
-### Download data
+### Download data to your local machine
 
-We provide a python script `download_training.py` for data downloading. 
+We provide a python script `download_training.py` for the data downloading. 
 
-* Specify the output directory
+* Specify an output directory
 
   --output-dir OUTPUTDIR
 
@@ -106,7 +106,7 @@ Download all optical flow data without flow-mask:
 python download_training.py --output-dir OUTPUTDIR --flow --only-flow
 ```
 
-Download all the files in the dataset:
+Download all the files in the dataset (could be very slow due to the large size):
 
 ```
 python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow
@@ -114,7 +114,7 @@ python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow
 
 ### Access the data using Azure virtual machine
 
-Yet another way to access the data is to use Azure virtual machine. In this way, you don't have to download the data to your local machine. You can use [Azure SDKs](https://github.com/Azure/azure-sdk-for-python) to access the data. [Here](TartanAir_Sample.ipynb) is a sample notebook for accessing and visualizing the data.
+Yet another way to access the data is to use Azure virtual machine. In this way, you don't have to download the data to your local machine. You can use [Azure SDKs](https://github.com/Azure/azure-sdk-for-python) to access the data on the cloud. [Here](TartanAir_Sample.ipynb) is a sample notebook for accessing and visualizing the data.
 
 ## Download the testing data for the [CVPR Visual SLAM challenge](https://sites.google.com/view/vislocslamcvpr2020/slam-challenge)
 You can click the download links below. In Linux system, you can also run the following command to download all the files: 
