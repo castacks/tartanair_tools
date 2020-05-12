@@ -117,7 +117,8 @@ python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow
 
 Yet another way to access the data is to use an Azure virtual machine. In this way, you don't have to download the data to your local machine. You can use [Azure SDKs](https://github.com/Azure/azure-sdk-for-python) to access the data on the cloud. [Here](TartanAir_Sample.ipynb) is a sample notebook for accessing and visualizing the data. **NOTE: This sample notebook can only be used on Azure. To download the data to your local machine, please refer to the download instructions [here](https://github.com/castacks/tartanair_tools#download-data-to-your-local-machine) or the [dataset website](http://theairlab.org/tartanair-dataset) for the sample data.**
 
-## Download the testing data for the [CVPR Visual SLAM challenge](https://sites.google.com/view/vislocslamcvpr2020/slam-challenge)
+## Download the testing data for the CVPR Visual SLAM challenge
+
 You can click the download links below. In Linux system, you can also run the following command to download all the files: 
 ```
 wget -r -i download_cvpr_slam_test.txt
@@ -190,6 +191,12 @@ stereo
 * [Both monocular and stereo tracks](https://tartanair.blob.core.windows.net/tartanair-testing1/tartanair-test-release.tar.gz) (Size: 25.16 GB)
 
   MD5 hash: ea176ca274135622cbf897c8fa462012 
+
+More information about the [CVPR Visual SLAM challenge](https://sites.google.com/view/vislocslamcvpr2020/slam-challenge)
+
+* The [monocular track](https://www.aicrowd.com/challenges/tartanair-visual-slam-mono-track)
+
+* The [stereo track](https://www.aicrowd.com/challenges/tartanair-visual-slam-stereo-track)
 
 ## Evaluation tools
 
