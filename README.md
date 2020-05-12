@@ -49,7 +49,7 @@ ROOT
 
 ### Download data to your local machine
 
-We provide a python script `download_training.py` for downloading. 
+We provide a python script `download_training.py` for downloading. You can also take look at the [url list](download_training_zipfiles.txt) to download the spesific files you want. 
 
 * Specify an output directory
 
@@ -193,7 +193,17 @@ stereo
 
 ## Evaluation tools
 
-Coming soon!
+Following the [TUM dataset](https://vision.in.tum.de/data/datasets/rgbd-dataset) and the [KITTI dataset](http://www.cvlibs.net/datasets/kitti/eval_odometry.php), we adopt three metrics: absolute trajectory error (ATE), the relative pose error (RPE), a modified version of KITTI VO metric. 
+
+[More details](https://vision.in.tum.de/data/datasets/rgbd-dataset/tools#evaluation)
+
+Check out the sample code: 
+```
+cd evaluation
+python tartanair_evaluator.py
+```
+
+Note that our camera poses are defined in the NED frame. That is to say, the x-axis is pointing to the camera's forward, the y-axis is pointing to the camera's right, the z-axis is pointing to the camera's downward. You can use the `cam2ned` function in the `evaluation/trajectory_transform.py` to transform the trajectory from the camera frame to the NED frame. 
 
 ## Paper
 More technical details are available in the [TartanAir paper](https://arxiv.org/abs/2003.14338). Please cite this as: 
