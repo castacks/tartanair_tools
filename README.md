@@ -1,5 +1,6 @@
 # TartanAir dataset: AirSim Simulation Dataset for Simultaneous Localization and Mapping
 This repository provides sample codes and scripts for accessing the training and testing data, as well as evaluation tools. Please refer to [TartanAir](http://theairlab.org/tartanair-dataset) for more information about the dataset. 
+You can also reach out to contributors on the associated [AirSim GitHub](https://github.com/microsoft/AirSim).
 
 ## Download the training data
 
