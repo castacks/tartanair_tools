@@ -115,7 +115,7 @@ python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow
 
 ### Access the data using Azure virtual machine
 
-Yet another way to access the data is to use an Azure virtual machine. In this way, you don't have to download the data to your local machine. You can use [Azure SDKs](https://github.com/Azure/azure-sdk-for-python) to access the data on the cloud. [Here](TartanAir_Sample.ipynb) is a sample notebook for accessing and visualizing the data. **NOTE: This sample notebook should only be used on Azure. To download the data to your local machine, please refer to the download instructions here or the dataset website for the sample data.**
+Yet another way to access the data is to use an Azure virtual machine. In this way, you don't have to download the data to your local machine. You can use [Azure SDKs](https://github.com/Azure/azure-sdk-for-python) to access the data on the cloud. [Here](TartanAir_Sample.ipynb) is a sample notebook for accessing and visualizing the data. **NOTE: This sample notebook can only be used on Azure. To download the data to your local machine, please refer to the download instructions [here](https://github.com/castacks/tartanair_tools#download-data-to-your-local-machine) or the [dataset website](http://theairlab.org/tartanair-dataset) for the sample data.**
 
 ## Download the testing data for the [CVPR Visual SLAM challenge](https://sites.google.com/view/vislocslamcvpr2020/slam-challenge)
 You can click the download links below. In Linux system, you can also run the following command to download all the files: 
