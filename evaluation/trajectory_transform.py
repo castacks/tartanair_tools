@@ -1,3 +1,6 @@
+# Copyright (c) 2020 Carnegie Mellon University, Wenshan Wang <wenshanw@andrew.cmu.edu>
+# For License information please see the LICENSE file in the root directory.
+
 import numpy as np
 import transformation as tf
 

@@ -1,3 +1,8 @@
+# Copyright (c) 2020 Carnegie Mellon University, Wenshan Wang <wenshanw@andrew.cmu.edu>
+# For License information please see the LICENSE file in the root directory.
+# This is a python reinplementation of the KITTI metric: http://www.cvlibs.net/datasets/kitti/eval_odometry.php
+# Cridit: Xiangwei Wang https://github.com/TimingSpace
+
 import numpy as np
 import sys
 

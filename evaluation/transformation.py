@@ -1,3 +1,7 @@
+# Copyright (c) 2020 Carnegie Mellon University, Wenshan Wang <wenshanw@andrew.cmu.edu>
+# For License information please see the LICENSE file in the root directory.
+# Cridit: Xiangwei Wang https://github.com/TimingSpace
+
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 

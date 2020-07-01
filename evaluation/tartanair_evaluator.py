@@ -1,3 +1,6 @@
+# Copyright (c) 2020 Carnegie Mellon University, Wenshan Wang <wenshanw@andrew.cmu.edu>
+# For License information please see the LICENSE file in the root directory.
+
 import numpy as np
 from evaluator_base import ATEEvaluator, RPEEvaluator, KittiEvaluator, transform_trajs, quats2SEs
 from os.path import isdir, isfile

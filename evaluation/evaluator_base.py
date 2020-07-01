@@ -1,3 +1,6 @@
+# Copyright (c) 2020 Carnegie Mellon University, Wenshan Wang <wenshanw@andrew.cmu.edu>
+# For License information please see the LICENSE file in the root directory.
+
 import numpy as np
 from trajectory_transform import trajectory_transform, rescale
 from transformation import pos_quats2SE_matrices, SE2pos_quat
