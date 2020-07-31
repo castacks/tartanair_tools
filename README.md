@@ -215,10 +215,10 @@ Note that our camera poses are defined in the NED frame. That is to say, the x-a
 ## Paper
 More technical details are available in the [TartanAir paper](https://arxiv.org/abs/2003.14338). Please cite this as: 
 ```
-@article{tartanair2020arxiv,
+@article{tartanair2020iros,
   title =   {TartanAir: A Dataset to Push the Limits of Visual SLAM},
-  author =  {Wenshan Wang, Delong Zhu, Xiangwei Wang, Yaoyu Hu, Yuheng Qiu, Chen Wang, Yafei Hu, Ashish Kapoor, Sebastian Scherer},
-  journal = {arXiv preprint arXiv:2003.14338},
+  author =  {Wang, Wenshan and Zhu, Delong and Wang, Xiangwei and Hu, Yaoyu and Qiu, Yuheng and Wang, Chen and Hu, Yafei and Kapoor, Ashish and Scherer, Sebastian},
+  booktitle = {2020 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
   year =    {2020}
 }
 ```
