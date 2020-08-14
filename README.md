@@ -49,7 +49,7 @@ ROOT
 
 ### Download data to your local machine
 
-We provide a python script `download_training.py` for downloading. You can also take look at the [url list](download_training_zipfiles.txt) to download the spesific files you want. 
+We provide a python script `download_training.py` for the data downloading. You can also take look at the [URL list](download_training_zipfiles.txt) to download the spesific files you want. 
 
 * Specify an output directory
 
@@ -112,6 +112,17 @@ Download all the files in the dataset (could be very slow due to the large size)
 ```
 python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow
 ```
+
+---
+**NOTE**
+
+We found that using AzCopy, which is a tool provided by MicroSoft, is much faster than directly donwloading by the URLs. Please try the following steps if you want to accelerate the downloading process. 
+
+1. Download the [AzCopy](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10) and put the executable to your system path. 
+
+2. Run the above commonds with a --azcopy tag. 
+
+---
 
 ### Access the data using Azure virtual machine
 

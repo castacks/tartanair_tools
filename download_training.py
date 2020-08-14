@@ -38,6 +38,9 @@ def get_args():
     parser.add_argument('--only-mask', action='store_true', default=False,
                         help='download only mask wo/ flow')
 
+    parser.add_argument('--azcopy', action='store_true', default=False,
+                        help='download the data with AzCopy, which is 10x faster in our test')
+
     args = parser.parse_args()
 
     return args
@@ -148,6 +151,9 @@ if __name__ == '__main__':
             print('Target file {} already exists..'.format(targetfile))
             exit()
 
-        cmd = 'wget -r -O ' + targetfile + ' ' + fileurl
+        if args.azcopy:
+            cmd = 'azcopy copy ' + fileurl + ' ' + targetfile 
+        else:
+            cmd = 'wget -r -O ' + targetfile + ' ' + fileurl
         print cmd
-        # system(cmd)
+        system(cmd)
