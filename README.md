@@ -120,7 +120,7 @@ We found that using AzCopy, which is a tool provided by MicroSoft, is much faste
 
 1. Download the [AzCopy](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10) and put the executable to your system path. 
 
-2. Run the above commonds with a --azcopy tag. 
+2. Run the above commands with a --azcopy tag. 
 
 ---
 
