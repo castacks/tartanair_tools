@@ -4,6 +4,8 @@ import time
 
 import numpy as np
 
+from skimage.util import random_noise
+
 def add_motion_blur(img, flow):
     '''
     Input: 
@@ -152,6 +154,50 @@ def add_simple_motion_blur(img, k_size, horizontal=True):
     
     return img_blur
 
+
+def customized_salt_and_pepper(img, mode='s&p', ratio=0.03):
+    '''
+    input: 
+        img: shape (H, W, C), with value between [0, 255]
+        mode: a string s (salt), p (pepper), s&p (salt and pepper)
+        amount: the amount of pixels to add 
+    output:
+        img_noise: shape (H, W, C)
+    '''
+
+    img_h, img_w = img.shape[:2]
+    
+    num_pixel = img_h * img_w
+    num_sample = int(num_pixel * ratio)
+    
+    img_noise = img
+
+    if 's&p' or 's':
+        salt_idx = np.random.randint(0, num_pixel, size=num_sample)
+        row = salt_idx // img_w
+        col = salt_idx % img_w
+        img_noise[row, col, :] = np.array([255, 255, 255])
+    
+    if 's&p' or 'p':
+        pepper_idx = np.random.randint(0, num_pixel, size=num_sample)
+        row = pepper_idx // img_w
+        col = pepper_idx % img_w
+        img_noise[row, col, :] = np.array([0, 0, 0])
+
+    return img_noise
+        
+def salt_and_pepper_colorful(img, mode, amount):
+    
+    img_noise = random_noise(img, mode=mode, amount=amount)
+
+    return (img_noise * 255).astype(np.uint8)
+
+def gaussian_noise(img, sigma):
+
+    img = random_noise(img, var=sigma**2)
+    
+    return (img * 255).astype(np.uint8)
+
 if __name__ == '__main__':
     
     
@@ -164,9 +210,9 @@ if __name__ == '__main__':
     save_img_path = 'output.png'
 
     # left image
-    left_img1_path = os.path.join(data_dir, 'image_left', '000100_left.png')
-    left_img2_path = os.path.join(data_dir, 'image_left', '000101_left.png')
-    flow_img_path = os.path.join(data_dir, 'flow', '000100_000101_flow.npy') 
+    left_img1_path = os.path.join(data_dir, 'image_left', '000000_left.png')
+    left_img2_path = os.path.join(data_dir, 'image_left', '000001_left.png')
+    flow_img_path = os.path.join(data_dir, 'flow', '000000_000001_flow.npy') 
     
     # sample code 
     # imgfile1 = 'data/000380_left.png'
@@ -182,12 +228,31 @@ if __name__ == '__main__':
     flow = load_flow(flow_img_path)
     flowvis = visflow(flow)
     
-    
-    img_blur = add_motion_blur(img2, flow)
+    cv2.imwrite('img1.png', img1)
+    ''' blur image with optical flow''' 
+    # img_blur = add_motion_blur(img1.copy(), flow)
 
 
-    visimg = np.concatenate((img1,img_blur, img2, flowvis), axis=0)
-    visimg = cv2.resize(visimg, (0, 0), fx=0.5, fy=0.5)
-    cv2.imwrite(save_img_path, visimg)
-    # cv2.imshow('img', visimg)
-    # cv2.waitKey(0)
+    # visimg = np.concatenate((img1,img_blur, img2, flowvis), axis=0)
+    # visimg = cv2.resize(visimg, (0, 0), fx=0.5, fy=0.5)
+    # cv2.imwrite(save_img_path, visimg)
+
+    ''' add noise to pixels '''
+    print(img1.shape)
+    # process image with salt and pepper
+    img_sp_color = salt_and_pepper_colorful(img1.copy(), mode='s&p', amount=0.03)
+    img_sp_bw    = customized_salt_and_pepper(img1.copy(), mode='s&p', ratio=0.015)
+    start_time = time.time()
+    img_gaussian = gaussian_noise(img1.copy(), 0.1)
+    end_time   = time.time()
+
+    print('Gaussian Noise time: {}'.format(end_time - start_time))
+    # save image
+    cv2.imwrite('salt_pepper_color.png', img_sp_color)
+    cv2.imwrite('salt_pepper_bw.png', img_sp_bw)
+    cv2.imwrite('gaussian_noise.png', img_gaussian)
+
+
+
+
+
