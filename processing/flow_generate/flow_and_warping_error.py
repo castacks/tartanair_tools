@@ -2,21 +2,22 @@
 
 from __future__ import print_function
 
-from settings import get_args
+import os
 import cv2
 import math
-import multiprocessing
-import numpy as np
-import numpy.linalg as LA
-import os
-import pandas
-import queue as queue # python3.
 import time
-from os.path import isfile, isdir
-from os import listdir, mkdir
+import pandas
+import multiprocessing
 
-from Camera import CameraBase
+import numpy as np
+import queue as queue # python3.
+import numpy.linalg as LA
 import WorkDirectory as WD
+
+from os import listdir, mkdir
+from Camera import CameraBase
+from settings import get_args
+from os.path import isfile, isdir
 
 # NumPy dtype for PCL routines.
 NP_FLOAT = np.float64
@@ -271,6 +272,17 @@ def warp_10(img1, u, v, X_01C_dist, X1C_dist, z, occThresh = 0.707, occDistThres
     return warpImg, maskOcclusion, maskOutofView, maskOccbyOut
 
 def load_pose_id_pose_data_from_folder(poseDataFn, imgdir):
+    """
+    inputs:
+        poseDataFn: the path to the pose file
+                    e.g. /data/datasets/wenshanw/tartan_data/oldtown/Data/P000/pose_left.txt
+        imgdir:     the path to the image sequence directory (the same as trajpath)
+                    e.g. /data/datasets/wenshanw/tartan_data/oldtown/Data/P000/image_left
+    outputs:
+        poseIDs: the list of image ids 
+                    e.g. [000000, 000001, ... 000845.... ]
+        poseData: an numpy array with shape (n, 7), where n is the number of images 
+    """
 
     imgfiles = os.listdir(imgdir)
     poseIDs = [fn.split('_')[0] for fn in imgfiles if fn[-4:]=='.png']
@@ -282,7 +294,7 @@ def load_pose_id_pose_data_from_folder(poseDataFn, imgdir):
         poseData = np.load( poseDataFn ).astype(NP_FLOAT)
 
     assert len(poseIDs) == len(poseData)
-
+    
     return poseIDs, poseData
 
 
@@ -364,10 +376,12 @@ def process_single_process(name, outDir, \
     R0, t0, q0 = WD.get_pose_from_line(poseDataLine_0)
     R0Inv = LA.inv(R0)
     M0 = compose_m(R0, t0)
+    
     # Get the pose of the second position.
     R1, t1, q1 = WD.get_pose_from_line(poseDataLine_1)
     R1Inv = LA.inv(R1)
     M1 = compose_m(R1, t1)
+    
     # Compute the rotation between the two camera poses.
     R = np.matmul( R1, R0Inv )
 
@@ -549,10 +563,15 @@ def process_report_queue(rq, jobnum):
     """
     rq: A Queue object containing the report data.
     """
+    
     count = 0
 
-    mergedDict = { "idx": [], "poseID_0": [], "poseID_1": [], \
-        "error": [], "invalid_num": [] }
+    mergedDict = {"idx": [], 
+                  "poseID_0": [], 
+                  "poseID_1": [],
+                  "error": [], 
+                  "invalid_num": [] 
+                 }
 
     while (count < jobnum):
         try:
@@ -589,27 +608,41 @@ def save_report(fn, report):
 
 
 def process_trajectory(args, imgpath, posefile, flowpath, trajpath):
+    """
+    inputs:
+        args: arguments and parameters
+        imgpath: the path to the folder of images. 
+                 e.g. /data/datasets/wenshanw/tartan_data/oldtown/Data/P000/image_left
+        posefile: the path to a text pose file.
+                 e.g. /data/datasets/wenshanw/tartan_data/oldtown/Data/P000/pose_left.txt
+        flowpath: the path to the directory to save flow images
+                 e.g. /data/datasets/wenshanw/tartan_data/oldtown/Data/P000/flow2_1007_140542
+        trajpath: the path to the folder of a trajectory, a sequence of images
+                 e.g. /data/datasets/wenshanw/tartan_data/oldtown/Data/P000
+    """
+
     # Load the pose filenames and the pose data.
     # poseIDs, poseData = load_pose_id_pose_data( inputParams, args )
-    poseIDs, poseData = load_pose_id_pose_data_from_folder( posefile, imgpath)
+    poseIDs, poseData = load_pose_id_pose_data_from_folder(posefile, imgpath)
     print("poseData and poseFilenames loaded.")
-
+    
     # Get the number of poseIDs.
     nPoses = len( poseIDs )
     idxNumberRequest = nPoses #inputParams["idxNumberRequest"]
 
     idxStep = args.index_step # inputParams["idxStep"]
 
-    idxList = [ i for i in range( args.start_index, nPoses - idxStep ) ]
+    idxList = list(range(args.start_index, nPoses - idxStep)) 
+              # [ i for i in range(args.start_index, nPoses - idxStep) ]
     if ( idxNumberRequest < len(idxList)-1 ):
         idxList = idxList[:idxNumberRequest+1]
-
     idxArray = np.array(idxList, dtype=np.int)
 
     # # Reshape the idxArray.
     # idxArrayR = WD.reshape_idx_array(idxArray)
 
     startTime = time.time()
+    return
 
     print("Main: Main process.")
 
@@ -647,15 +680,11 @@ def process_trajectory(args, imgpath, posefile, flowpath, trajpath):
     loggerQueue.join()
 
     nIdx   = idxArray.size
-    # nIdxR  = idxArrayR.size
-    # maxIdx = idxArray.max()
 
     for i in range(nIdx):
+        
         # The index of cam_0.
         idx_0 = idxArray[i]
-
-        # if ( idx_0 >= maxIdx - idxStep):
-        #     continue
 
         idx_1 = idx_0 + idxStep
 
@@ -729,30 +758,38 @@ def process_trajectory(args, imgpath, posefile, flowpath, trajpath):
 
 # python flow_and_warping_error.py --data-root '' --data-folders '' -- env-folders '' --index-step 2 --flow-outdir flow2 --np 8
 if __name__ == "__main__":
+    
     # Script input arguments.
     args = get_args()
 
     data_root_dir = args.data_root
     data_folders = args.data_folders.split(',')
-
+    
+    # find env folders
     if args.env_folders=='': # read all available folders in the data_root_dir
         env_folders = listdir(data_root_dir)    
     else:
         env_folders = args.env_folders.split(',')
     print('Detected envs {}'.format(env_folders))
 
-    logf = FileLogger(data_root_dir+'/flow_error.log')
+    logf = FileLogger( os.path.join(data_root_dir, 'flow_error.log') )
 
     for env_folder in env_folders:
-        env_dir = data_root_dir+'/'+ env_folder
+
+        env_dir = os.path.join(data_root_dir, env_folder)
         print('Working on env {}'.format(env_dir))
 
         for data_folder in data_folders:
-            datapath = env_dir +'/'+ data_folder
+            
+            datapath = os.path.join(env_dir, data_folder)
+            
             if not isdir(datapath):
+                
                 logf.logline('Data folder missing ' + datapath)
                 print('!!data folder missing '+ datapath)
+                
                 continue
+            
             print('    Opened data folder {}'.format(datapath))
  
             trajfolders = listdir(datapath)
@@ -761,27 +798,41 @@ if __name__ == "__main__":
             print('    Found {} trajectories'.format(len(trajfolders)))
 
             for trajfolder in trajfolders:
-                trajpath = datapath +'/' +trajfolder
-                flowpath = trajpath +'/' + args.flow_outdir
+
+                trajpath = os.path.join(datapath, trajfolder) # datapath +'/' + trajfolder
+                flowpath = os.path.join(trajpath, args.flow_outdir) # trajpath +'/' + args.flow_outdir
+                
                 if not isdir(flowpath):
+                    
                     mkdir(flowpath)
+                
                 elif not args.force_overwrite:
-                    timestr = time.strftime('%m%d_%H%M%S',time.localtime())
-                    flowpath = flowpath+'_'+timestr
+                    
+                    timestr  = time.strftime('%m%d_%H%M%S',time.localtime())
+                    flowpath = flowpath + '_' + timestr
                     mkdir(flowpath)
                     logf.logline('Flow folder exists, create new ' + flowpath)
                     print('Flow folder exists, create new ' + flowpath)
 
-                imgpath = trajpath +'/image_left'
-                posefile = trajpath +'/pose_left.txt'
+                imgpath  = os.path.join(trajpath, 'image_left') # trajpath +'/image_left'
+                posefile = os.path.join(trajpath, 'pose_left.txt') # trajpath +'/pose_left.txt'
 
                 if not isdir(imgpath):
+                    
                     logf.logline('Can not find image folder ' + imgpath)
-                    print('    !!image folder missing '+ imgpath)
+                    print('    !!image folder missing ' + imgpath)
+                    
                     continue
+                
                 if not isfile(posefile):
+                    
                     logf.logline('Can not find pose file ' + posefile)
-                    print('    !!pose file missing '+ posefile)
+                    print('    !!pose file missing ' + posefile)
+                    
                     continue
-
+                
                 process_trajectory(args, imgpath, posefile, flowpath, trajpath)
+                
+                break # for debugging
+        
+        break # for debugging
