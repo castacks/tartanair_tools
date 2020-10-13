@@ -438,7 +438,10 @@ def process_single_process(name, outDir, \
     diffmask = diff.copy()
     diffmask[maskcombine] = 0
     maskedError = diff[validCombine].mean()
-    # import ipdb;ipdb.set_trace()
+    
+    # import ipdb;
+    # ipdb.set_trace()
+
     print("  error: {}, {}, {}".format(diff.mean(), maskedError, invalidnum))
 
     save_flow( "%s/%s_%s" % (outDir, poseID_0, poseID_1), "_flow", "_mask", du, dv, maskOutofView, maskOcclusion, maskOccbyOut)
@@ -842,4 +845,4 @@ if __name__ == "__main__":
                 
                 # break # for debugging
         
-        break # for debugging
+        # break # for debugging

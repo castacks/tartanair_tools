@@ -26,7 +26,6 @@ def add_motion_blur(img, flow):
     flow_length = np.round(np.sqrt(flow[:,:,0]**2 + flow[:,:,1]**2)).astype(np.int32)
 
     N = np.amax(flow_length)
-    # print('The longest flow is {}'.format(N))
     print('(img_h, img_w): ({}, {})'.format(img_h, img_w))
 
     for y0 in range(img_h):
@@ -69,20 +68,6 @@ def add_motion_blur(img, flow):
             img_counter[path[:, 0], path[:, 1]] += 1
             img_blur[path[:, 0], path[:, 1]] /= np.expand_dims(img_counter[path[:, 0], path[:, 1]], axis=-1)
             
-            '''        
-            for idx in range(path.shape[0]):
-                
-                # if consecutive points on the path is the same
-                if (not idx==0) and (np.all(path[idx]==path[idx-1])): continue
-                
-                y = path[idx][0]
-                x = path[idx][1]
-                
-                # add pixels on (yn, xn) to pixels on the contour
-                img_blur[y][x] = img_blur[y][x] * img_counter[y][x] + img[y0][x0]
-                img_counter[y][x] += 1
-                img_blur[y][x] /= img_counter[y][x]
-            '''
     time_end = time.time()
 
     print('total time: {}'.format(time_end - time_start))
@@ -210,14 +195,18 @@ if __name__ == '__main__':
     save_img_path = 'output.png'
 
     # left image
-    left_img1_path = os.path.join(data_dir, 'image_left', '000000_left.png')
-    left_img2_path = os.path.join(data_dir, 'image_left', '000001_left.png')
-    flow_img_path = os.path.join(data_dir, 'flow', '000000_000001_flow.npy') 
+    # left_img1_path = os.path.join(data_dir, 'image_left', '000000_left.png')
+    # left_img2_path = os.path.join(data_dir, 'image_left', '000001_left.png')
+    # flow_img_path = os.path.join(data_dir, 'flow', '000000_000001_flow.npy') 
     
     # sample code 
     # imgfile1 = 'data/000380_left.png'
     # imgfile2 = 'data/000381_left.png'
     # flowfile = 'data/000380_000381_flow.npy'
+    
+    left_img1_path = './data/000010_left.png'
+    left_img2_path = './data/000009_left.png'
+    flow_img_path = './data/000010_000009_flow.npy'
 
     # img1 = load_rgb(imgfile1)
     # img2 = load_rgb(imgfile2)
@@ -230,13 +219,13 @@ if __name__ == '__main__':
     
     cv2.imwrite('img1.png', img1)
     ''' blur image with optical flow''' 
-    # img_blur = add_motion_blur(img1.copy(), flow)
+    img_blur = add_motion_blur(img1.copy(), flow)
 
 
-    # visimg = np.concatenate((img1,img_blur, img2, flowvis), axis=0)
-    # visimg = cv2.resize(visimg, (0, 0), fx=0.5, fy=0.5)
-    # cv2.imwrite(save_img_path, visimg)
-
+    visimg = np.concatenate((img1, img_blur, img2, flowvis), axis=0)
+    visimg = cv2.resize(visimg, (0, 0), fx=0.5, fy=0.5)
+    cv2.imwrite(save_img_path, visimg)
+    cv2.imwrite('./image_blur.png', img_blur) 
     ''' add noise to pixels '''
     print(img1.shape)
     # process image with salt and pepper
