@@ -43,18 +43,12 @@ def add_motion_blur(img, flow):
             # the points on the contour from (x_{t}, y_{t}) -> (x_{t+1}, y_{t+1})
             N = int(max(abs(xn - x0) + 1, abs(yn - y0) + 1))
             
-            x_path = np.linspace(x0, xn, num=N)
-            y_path = np.linspace(y0, yn, num=N)
+            x_path = np.linspace(x0, xn, num=N).astype(np.int32)[0:]
+            y_path = np.linspace(y0, yn, num=N).astype(np.int32)[0:]
             
-            # x_path = np.expand_dims(np.round(x_path), axis=-1).astype(np.int32)
-            # y_path = np.expand_dims(np.round(y_path), axis=-1).astype(np.int32)
-            x_path = np.round(x_path).astype(np.int32)
-            y_path = np.round(y_path).astype(np.int32)
+            # x_path = np.round(x_path).astype(np.int32)
+            # y_path = np.round(y_path).astype(np.int32)
             
-            # path = np.concatenate([y_path, x_path], axis=-1).astype(np.int32)[0:]
-            
-            # img_blur[path[:, 0], path[:, 1]] += img[y0][x0].reshape((1, -1))
-            # img_counter[path[:, 0], path[:, 1]] += 1
             
             img_blur[y_path, x_path] += img[y0][x0].reshape((1, -1))
             img_counter[y_path, x_path] += 1
