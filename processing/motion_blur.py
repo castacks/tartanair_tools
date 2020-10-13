@@ -20,12 +20,6 @@ def add_motion_blur(img, flow):
     
     img_blur = np.copy(img).astype(np.float32)
     img_counter = np.ones((img_h, img_w))
-    
-    # the longest flow
-    # flow_length = np.round(np.sqrt(flow[:,:,0]**2 + flow[:,:,1]**2)).astype(np.int32)
-
-    # N = np.amax(flow_length)
-    print('(img_h, img_w): ({}, {})'.format(img_h, img_w))
 
     for y0 in range(img_h):
         for x0 in range(img_w):
@@ -45,10 +39,6 @@ def add_motion_blur(img, flow):
             
             x_path = np.linspace(x0, xn, num=N).astype(np.int32)[0:]
             y_path = np.linspace(y0, yn, num=N).astype(np.int32)[0:]
-            
-            # x_path = np.round(x_path).astype(np.int32)
-            # y_path = np.round(y_path).astype(np.int32)
-            
             
             img_blur[y_path, x_path] += img[y0][x0].reshape((1, -1))
             img_counter[y_path, x_path] += 1
