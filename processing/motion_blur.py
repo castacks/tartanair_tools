@@ -15,7 +15,6 @@ def add_motion_blur(img, flow):
         img_blur: the blurred image with shape (H, W, 3)
     '''
     
-    time_start =time.time()
 
     img_h, img_w = img.shape[:2]
     
@@ -23,9 +22,9 @@ def add_motion_blur(img, flow):
     img_counter = np.ones((img_h, img_w))
     
     # the longest flow
-    flow_length = np.round(np.sqrt(flow[:,:,0]**2 + flow[:,:,1]**2)).astype(np.int32)
+    # flow_length = np.round(np.sqrt(flow[:,:,0]**2 + flow[:,:,1]**2)).astype(np.int32)
 
-    N = np.amax(flow_length)
+    # N = np.amax(flow_length)
     print('(img_h, img_w): ({}, {})'.format(img_h, img_w))
 
     for y0 in range(img_h):
@@ -41,37 +40,28 @@ def add_motion_blur(img, flow):
             xn = max(0, min(xn, img_w - 1))
             yn = max(0, min(yn, img_h - 1))
             
-            # x0, xn = xn, x0
-            # y0, yn = yn, y0
-
             # the points on the contour from (x_{t}, y_{t}) -> (x_{t+1}, y_{t+1})
-            x_path = np.linspace(x0, xn, num = N - 1, endpoint=False)
-            y_path = np.linspace(y0, yn, num = N - 1, endpoint=False)
+            N = int(max(abs(xn - x0) + 1, abs(yn - y0) + 1))
+            
+            x_path = np.linspace(x0, xn, num=N)
+            y_path = np.linspace(y0, yn, num=N)
+            
+            # x_path = np.expand_dims(np.round(x_path), axis=-1).astype(np.int32)
+            # y_path = np.expand_dims(np.round(y_path), axis=-1).astype(np.int32)
+            x_path = np.round(x_path).astype(np.int32)
+            y_path = np.round(y_path).astype(np.int32)
+            
+            # path = np.concatenate([y_path, x_path], axis=-1).astype(np.int32)[0:]
+            
+            # img_blur[path[:, 0], path[:, 1]] += img[y0][x0].reshape((1, -1))
+            # img_counter[path[:, 0], path[:, 1]] += 1
+            
+            img_blur[y_path, x_path] += img[y0][x0].reshape((1, -1))
+            img_counter[y_path, x_path] += 1
 
-            x_path = np.round(x_path)
-            y_path = np.round(y_path)
-            
-            path = np.array(list(zip(y_path, x_path))).astype(np.int32)
-            
-            path_new = []
-            path_new.append(path[0])
-            
-            for p in path[1:]:
-                if not np.all(p == path_new[-1]): path_new.append(p)
-            
-            path = np.array(path_new).astype(np.int32)
-            
-            cnt = np.expand_dims(img_counter[path[:, 0], path[:, 1]], axis=-1)
-            
-            img_blur[path[:, 0], path[:, 1]] = img_blur[path[:, 0], path[:, 1]] * cnt
-            img_blur[path[:, 0], path[:, 1]] += img[y0][x0].reshape((1, -1))
-            img_counter[path[:, 0], path[:, 1]] += 1
-            img_blur[path[:, 0], path[:, 1]] /= np.expand_dims(img_counter[path[:, 0], path[:, 1]], axis=-1)
-            
-    time_end = time.time()
+    cnt = np.expand_dims(img_counter, axis=-1)
+    img_blur /= cnt
 
-    print('total time: {}'.format(time_end - time_start))
-    print('per pixel time: {}'.format((time_end - time_start) / (img_h * img_w)))
 
     return img_blur
 
@@ -218,14 +208,18 @@ if __name__ == '__main__':
     flowvis = visflow(flow)
     
     cv2.imwrite('img1.png', img1)
+    
     ''' blur image with optical flow''' 
+    time_start =time.time()
     img_blur = add_motion_blur(img1.copy(), flow)
-
+    time_end = time.time()
+    print('total time: {}'.format(time_end - time_start))
 
     visimg = np.concatenate((img1, img_blur, img2, flowvis), axis=0)
     visimg = cv2.resize(visimg, (0, 0), fx=0.5, fy=0.5)
     cv2.imwrite(save_img_path, visimg)
-    cv2.imwrite('./image_blur.png', img_blur) 
+    cv2.imwrite('./image_blur.png', img_blur)
+
     ''' add noise to pixels '''
     print(img1.shape)
     # process image with salt and pepper
