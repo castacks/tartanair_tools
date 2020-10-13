@@ -450,12 +450,13 @@ def process_single_process(name, outDir, \
     return warpImg, maskedError, invalidnum
 
 def logging_worker(name, jq, p, workingDir):
+    
     import logging
 
     logger = logging.getLogger("ImageFlow")
     logger.setLevel(logging.INFO)
 
-    logFn = "%s/flow_log.log" % (workingDir)
+    logFn = "%s/flow_log_ctchou.log" % (workingDir)
     print(logFn)
 
     fh = logging.FileHandler( logFn, "w" )
@@ -631,18 +632,24 @@ def process_trajectory(args, imgpath, posefile, flowpath, trajpath):
     idxNumberRequest = nPoses #inputParams["idxNumberRequest"]
 
     idxStep = args.index_step # inputParams["idxStep"]
-
-    idxList = list(range(args.start_index, nPoses - idxStep)) 
-              # [ i for i in range(args.start_index, nPoses - idxStep) ]
-    if ( idxNumberRequest < len(idxList)-1 ):
-        idxList = idxList[:idxNumberRequest+1]
-    idxArray = np.array(idxList, dtype=np.int)
+    
+    if idxStep > 0:
+        
+        idxList = list(range(args.start_index, nPoses - idxStep)) 
+                # [ i for i in range(args.start_index, nPoses - idxStep) ]
+        if ( idxNumberRequest < len(idxList)-1 ):
+            idxList = idxList[:idxNumberRequest+1]
+        idxArray = np.array(idxList, dtype=np.int)
+         
+    elif idxStep < 0: # for gereating flow from t+1 -> t
+        
+        idxList = list(range(args.start_index - idxStep, nPoses))
+        idxArray = np.array(idxList, dtype=np.int)[::-1]
 
     # # Reshape the idxArray.
     # idxArrayR = WD.reshape_idx_array(idxArray)
 
     startTime = time.time()
-    return
 
     print("Main: Main process.")
 
@@ -680,7 +687,7 @@ def process_trajectory(args, imgpath, posefile, flowpath, trajpath):
     loggerQueue.join()
 
     nIdx   = idxArray.size
-
+    
     for i in range(nIdx):
         
         # The index of cam_0.
@@ -691,7 +698,7 @@ def process_trajectory(args, imgpath, posefile, flowpath, trajpath):
         # Get the poseIDs.
         poseID_0 = poseIDs[ idx_0 ]
         poseID_1 = poseIDs[ idx_1 ]
-
+        
         # Get the poseDataLines.
         poseDataLine_0 = poseData[idx_0].reshape((-1, )).tolist()
         poseDataLine_1 = poseData[idx_1].reshape((-1, )).tolist()
@@ -700,7 +707,7 @@ def process_trajectory(args, imgpath, posefile, flowpath, trajpath):
             "poseLineList_0": poseDataLine_0, "poseLineList_1": poseDataLine_1 }
 
         jqueue.put(d)
-    
+        
     loggerQueue.put("Main: All jobs submitted.")
 
     # Process the rqueue.
@@ -833,6 +840,6 @@ if __name__ == "__main__":
                 
                 process_trajectory(args, imgpath, posefile, flowpath, trajpath)
                 
-                break # for debugging
+                # break # for debugging
         
         break # for debugging
