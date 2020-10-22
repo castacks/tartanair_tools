@@ -810,6 +810,8 @@ if __name__ == "__main__":
             for trajfolder in trajfolders:
 
                 trajpath = os.path.join(datapath, trajfolder) # datapath +'/' + trajfolder
+                
+                # flow path is the path to store the generated flow images
                 flowpath = os.path.join(trajpath, args.flow_outdir) # trajpath +'/' + args.flow_outdir
                 
                 if not isdir(flowpath):

@@ -1,11 +1,14 @@
 DATA_ROOT=/data/datasets/wenshanw/tartan_data
 STEP=-1 # 2 #-2
-NP=1 # 8
+NP=8
 DATA_FOLDER='Data,Data_fast'
-python3 flow_and_warping_error.py \
+SAVE_DIR='flow_reverse'
+# tartanair_tools/processing/flow_generate/run.sh
+python3 /home/chaotec/tartanair_tools/processing/flow_generate/flow_and_warping_error.py \
     --data-root $DATA_ROOT \
     --data-folders ${DATA_FOLDER} \
     --env-folders '' \
     --index-step $STEP \
-    --flow-outdir flow2 \
+    --flow-outdir ${SAVE_DIR} \
+    --force-overwrite \
     --np $NP

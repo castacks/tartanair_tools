@@ -20,6 +20,8 @@ def add_motion_blur(img, flow):
     
     img_blur = np.copy(img).astype(np.float32)
     img_counter = np.ones((img_h, img_w))
+    
+    img = np.expand_dims(img.astype(np.float32), axis=2)
 
     for y0 in range(img_h):
         for x0 in range(img_w):
@@ -35,12 +37,12 @@ def add_motion_blur(img, flow):
             yn = max(0, min(yn, img_h - 1))
             
             # the points on the contour from (x_{t}, y_{t}) -> (x_{t+1}, y_{t+1})
-            N = int(max(abs(xn - x0) + 1, abs(yn - y0) + 1))
+            N = int(max(abs(xn - x0), abs(yn - y0))) + 1
             
-            x_path = np.linspace(x0, xn, num=N).astype(np.int32)[0:]
-            y_path = np.linspace(y0, yn, num=N).astype(np.int32)[0:]
+            x_path = np.linspace(x0, xn, num=N)[0:].astype(np.int32)
+            y_path = np.linspace(y0, yn, num=N)[0:].astype(np.int32)
             
-            img_blur[y_path, x_path] += img[y0][x0].reshape((1, -1))
+            img_blur[y_path, x_path] += img[y0][x0]# .reshape((1, -1))
             img_counter[y_path, x_path] += 1
 
     cnt = np.expand_dims(img_counter, axis=-1)
@@ -178,9 +180,9 @@ if __name__ == '__main__':
     # imgfile2 = 'data/000381_left.png'
     # flowfile = 'data/000380_000381_flow.npy'
     
-    left_img1_path = './data/000010_left.png'
-    left_img2_path = './data/000009_left.png'
-    flow_img_path = './data/000010_000009_flow.npy'
+    left_img1_path = '/home/chaotec/tartanair_tools/processing/data/000010_left.png'
+    left_img2_path = '/home/chaotec/tartanair_tools/processing/data/000009_left.png'
+    flow_img_path = '/home/chaotec/tartanair_tools/processing/data/000010_000009_flow.npy'
 
     # img1 = load_rgb(imgfile1)
     # img2 = load_rgb(imgfile2)
@@ -193,7 +195,8 @@ if __name__ == '__main__':
     
     cv2.imwrite('img1.png', img1)
     
-    ''' blur image with optical flow''' 
+    ''' blur image with optical flow'''
+
     time_start =time.time()
     img_blur = add_motion_blur(img1.copy(), flow)
     time_end = time.time()
@@ -215,9 +218,9 @@ if __name__ == '__main__':
 
     print('Gaussian Noise time: {}'.format(end_time - start_time))
     # save image
-    cv2.imwrite('salt_pepper_color.png', img_sp_color)
-    cv2.imwrite('salt_pepper_bw.png', img_sp_bw)
-    cv2.imwrite('gaussian_noise.png', img_gaussian)
+    cv2.imwrite('/home/chaotec/tartanair_tools/processing/salt_pepper_color.png', img_sp_color)
+    cv2.imwrite('/home/chaotec/tartanair_tools/processing/salt_pepper_bw.png', img_sp_bw)
+    cv2.imwrite('/home/chaotec/tartanair_tools/processing/gaussian_noise.png', img_gaussian)
 
 
 
