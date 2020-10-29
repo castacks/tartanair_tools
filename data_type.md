@@ -27,14 +27,14 @@ cy = 240.0  # optical center y
 fov = 90 deg # field of view
 
 width = 640
-height = 320
+height = 480
 ```
 
 ### Depth image
 
 The depth maps are stored as 640x480 16-bit numpy array in NPY format. In the Unreal Engine, the environment usually has a sky sphere at a large distance. So the infinite distant object such as the sky has a large depth value (e.g. 10000) instead of an infinite number. 
 
-The baseline between the left and right cameras are 0.25m. 
+The unit of the depth value is meter. The baseline between the left and right cameras are 0.25m. 
 
 * Load the depth image:
 ```
