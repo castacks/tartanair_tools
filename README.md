@@ -4,7 +4,7 @@ You can also reach out to contributors on the associated [AirSim GitHub](https:/
 
 ## Download the training data
 
-The data is divided into two levels (Easy and Hard) in terms of the motion patterns. It is organized in trajectory folders. You can download data from different cameras (left or right), with different data types (RGB, depth, segmentation, camera pose, and flow). Please see [data type](data_type.md) page for more information. 
+The data is divided into two levels (Easy and Hard) in terms of the motion patterns. It is organized in trajectory folders. You can download data from different cameras (left or right), with different data types (RGB, depth, segmentation, camera pose, and flow). Please see [data type](data_type.md) page for the camera intrinsics, extrinsics and other information. 
 
 
 <p style="color:red"> <b> !! NOTE: The size of all the data is up to 3TB! It could take days to download. We also added the option to use the dataset directly on Azure without requiring a download. Please select the data type you really need before download. You can also go to 
