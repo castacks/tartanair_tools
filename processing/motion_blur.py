@@ -7,39 +7,6 @@ import numpy as np
 from skimage.util import random_noise
 from skimage.transform import rescale, resize
 
-def resize_and_compute_residual(img, flow, ratio):
-    '''
-    Input:
-        img: RGB image with shape (H, W, 3)
-        flow: a numpy array with shape (H, W, 2) at time t-> t+1
-    Output:
-        img_small: RGB image with shape (H * ration, W*ration), astype np.float32
-        flow_small: a numpy array with shape (H * ration, W * ration, 2) at time t -> t + 1
-        img_resid: RGM image with residual, astype np.float32
-    ''' 
-
-    img_h, img_w = img.shape[:2]
-    
-    img_h_new = round(img_h * ratio)
-    img_w_new = round(img_w * ratio)
-
-    img = img.astype(np.float32)
-    flow = flow.astype(np.float32)
-    print('Before rescaling img.shape: {}, max: {}, min: {}'.format(img.shape, np.amax(img), np.amin(img)))
-    print('Before rescaling flow.shape: {}, max: {}, min: {}'.format(flow.shape, np.amax(flow), np.amin(flow)))
-    
-    img_small = resize(img, output_shape=(img_h_new, img_w_new))
-    flow_small = resize(flow, output_shape=(img_h_new, img_w_new))
-    print('After rescaling img.shape: {}, max: {}, min: {}'.format(img_small.shape, np.amax(img_small), np.amin(img_small)))
-    print('After rescaling flow.shape: {}, max: {}, min: {}'.format(flow_small.shape, np.amax(flow_small), np.amin(flow_small)))
-
-    img_large = resize(img_small, output_shape=(img_h, img_w))
-    img_resid = img - img_large
-    print('After rescaling img_large: {}, max: {}, min: {}'.format(img_large.shape, np.amax(img_large), np.amin(img_large)))
-    print('After rescaling img_resid: {}, max: {}, min: {}'.format(img_resid.shape, np.amax(img_resid), np.amin(img_resid)))
-    
-    return img_small, flow_small, img_resid, img_large
-
 def add_motion_blur(img, flow):
     '''
     Input: 
@@ -83,6 +50,117 @@ def add_motion_blur(img, flow):
     img_blur /= cnt
 
 
+    return img_blur
+
+def add_motion_approx(img, flow, num_step=4):
+    '''
+    Input: 
+        img: RGB image with shape (H, W, 3) at time t
+        flow: a numpy array with shape (H, W, 2) at time t-> t+1
+    Output:
+        img_blur: the blurred image with shape (H, W, 3)
+    '''
+    
+    img_h, img_w = img.shape[:2]
+    img = img.astype(np.float32)
+    
+    img_blur = np.zeros_like(img)
+
+    # image move upper left flow
+    steps = np.ones((img_h, img_w, 1))
+    upper_left = img.copy()
+    
+    for idx in range(1, num_step+1):
+        upper_left[:-idx][:-idx][:] += img[idx:][idx:][:]
+        steps[idx:][idx:][:] += 1
+
+    upper_left /= steps
+    
+    # image move upper
+    steps[:,:, :] = 1
+    upper = img.copy()
+    
+    for idx in range(1, num_step+1):
+        upper[:-idx][:][:] += img[idx:][:][:]
+        steps[idx:][:][:] += 1
+    
+    upper /= steps
+
+    # image moves upper_right
+    steps[:,:,:] = 1
+    upper_right = img.copy()
+    
+    for idx in range(1, num_step+1):
+        upper_right[:-idx][idx:][:] += img[idx:][:-idx][:]
+        steps[idx:][:-idx][:] += 1
+    
+    upper_right /= steps
+
+    # image moves left
+    steps[:,:,:] = 1
+    left = img.copy()
+    
+    for idx in range(1, num_step+1):
+        left[:][:-idx][:] += img[:][idx:][:]
+        steps[:][idx:][:] += 1
+    
+    left /= steps
+
+    # image moves right
+    steps[:,:,:] = 1
+    right = img.copy()
+    
+    for idx in range(1, num_step+1):
+        right[:][idx:][:] += img[:][:-idx][:]
+        steps[:][:-idx][:] += 1
+    
+    right /= steps
+    
+    # image moves lower_left
+    steps[:,:,:] = 1
+    lower_left = img.copy()
+    
+    for idx in range(1, num_step+1):
+        lower_left[idx:][:-idx][:] += img[:-idx][idx:][:]
+        steps[:-idx][idx:][:] += 1
+    
+    lower_left /= steps
+    
+
+    # image moves lower_right
+    steps[:,:,:] = 1
+    lower_right = img.copy()
+    
+    for idx in range(1, num_step+1):
+        lower_right[idx:][idx:][:] += img[:-idx][:-idx][:]
+        steps[:-idx][:-idx][:] += 1
+    
+    lower_right /= steps
+    
+
+    for y in range(img_h):
+        for x in range(img_w):
+            dx, dy = flow[y,x]
+            
+            if dx == 0 and dy == 0: # do not move
+                img_blur[y][x] = img[y][x]
+            elif dx < 0 and dy < 0: # from upper_left
+                img_blur[y][x] = upper_left[y][x]
+            elif dx == 0 and dy < 0: # from upper
+                img_blur[y][x] = upper[y][x]
+            elif dx > 0 and dy < 0: # from upper right
+                img_blur[y][x] = upper_right[y][x]
+            elif dx < 0 and dy == 0: # from left
+                img_blur[y][x] = left[y][x]
+            elif dx > 0 and dy == 0: # from right
+                img_blur[y][x] = right[y][x]
+            elif dx < 0 and dy > 0: # from lower left
+                img_blur[y][x] = lower_left[y][x]
+            elif dx == 0 and dy > 0: # from lower
+                img_blur[y][x] = lower[y][x]
+            elif dx > 0 and dy > 0: # from lower right
+                img_blur[y][x] = lower_right[y][x]
+            
     return img_blur
 
 def calculate_angle_distance_from_du_dv(du, dv, flagDegree=False):
@@ -229,17 +307,11 @@ if __name__ == '__main__':
     
     cv2.imwrite('img1.png', img1)
     
-    ''' test resizing function '''
-    img_small, flow_small, img_resid, img_large = resize_and_compute_residual(img1.copy(), flow, ratio=0.8)
-    cv2.imwrite('img_small.png', img_small.astype(np.uint8))
-    cv2.imwrite('img_large.png', img_large.astype(np.uint8))
-    cv2.imwrite('img_reconstruct.png', (img_large + img_resid).astype(np.uint8))
-
-    
-    """
     ''' blur image with optical flow'''
+    print('Time to add motion_blur')
     time_start =time.time()
-    img_blur = add_motion_blur(img1.copy(), flow)
+    # img_blur = add_motion_blur(img1.copy(), flow)
+    img_blur = add_motion_approx(img1.copy(), flow, num_step=4)
     time_end = time.time()
     print('total time: {}'.format(time_end - time_start))
 
@@ -247,7 +319,7 @@ if __name__ == '__main__':
     visimg = cv2.resize(visimg, (0, 0), fx=0.5, fy=0.5)
     cv2.imwrite(save_img_path, visimg)
     cv2.imwrite('./image_blur.png', img_blur)
-
+    """
     ''' add noise to pixels '''
     print(img1.shape)
     # process image with salt and pepper
@@ -263,7 +335,4 @@ if __name__ == '__main__':
     cv2.imwrite('/home/chaotec/tartanair_tools/processing/salt_pepper_bw.png', img_sp_bw)
     cv2.imwrite('/home/chaotec/tartanair_tools/processing/gaussian_noise.png', img_gaussian)
     """
-
-
-
-
+    
