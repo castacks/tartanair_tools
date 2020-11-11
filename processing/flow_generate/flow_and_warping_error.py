@@ -372,6 +372,14 @@ def process_single_process(name, outDir, \
     imgDir, poseID_0, poseID_1, poseDataLine_0, poseDataLine_1, depth_0, depth_1, cam, 
     imgSuffix='_left', imgExt='.png', distanceRange=1000, save_flow_image=True):
     
+    fnBase = "%s/%s_%s" % (outDir, poseID_0, poseID_1)
+    save_flow_path = "%s%s.npy" % (fnBase, "_flow")
+    save_mask_path = "%s%s.npy" % (fnBase, "_mask")
+
+    if os.path.exists(save_flow_path) and os.path.exists(save_mask_path):
+        print('save_flow_path, {}, has been created'.format(save_flow_path))
+        return 0, 0, 0
+
     # Get the pose of the first position.
     R0, t0, q0 = WD.get_pose_from_line(poseDataLine_0)
     R0Inv = LA.inv(R0)
