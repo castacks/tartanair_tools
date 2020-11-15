@@ -1,6 +1,9 @@
 import os
 import cv2
 import time
+import glob
+import argparse
+import multiprocessing
 
 import numpy as np
 
@@ -88,199 +91,6 @@ def vector_to_degree(dx, dy):
 
     return angle
 
-def add_motion_approx(img, flow, num_step=4):
-    '''
-    Input: 
-        img: RGB image with shape (H, W, 3) at time t
-        flow: a numpy array with shape (H, W, 2) at time t-> t+1
-    Output:
-        img_blur: the blurred image with shape (H, W, 3)
-    '''
-    # compute maximum flow length
-    flow_length = np.sum(flow * flow, axis=-1)
-    flow_length = np.sqrt(flow_length)
-    max_length  = np.amax(flow_length)
-    num_step = int(np.ceil(max_length))
-    
-
-    img_h, img_w = img.shape[:2]
-    img = img.astype(np.float32)
-    
-    img_blur = np.zeros_like(img)
-    blur_maps = {}
-
-    # image move upper left
-    steps = np.ones((img_h, img_w, 1))
-    upper_left = img.copy()
-    blur_maps['upper_left'] = []
-    blur_maps['upper_left'].append(img.copy())
-
-    for idx in range(1, num_step+1):
-
-        upper_left[:-idx, :-idx, :] += img[idx:, idx:, :]
-        steps[:-idx, :-idx, :] += 1
-        
-        blur_maps['upper_left'].append(upper_left / steps)
-
-    # image move upper
-    steps[:,:, :] = 1
-    upper = img.copy()
-    blur_maps['upper'] = []
-    blur_maps['upper'].append(img.copy())
-
-    for idx in range(1, num_step+1):
-
-        upper[:-idx, :, :] += img[idx:, :, :]
-        steps[:-idx, :, :] += 1
-        
-        blur_maps['upper'].append(upper / steps)
-
-
-    # image moves upper_right
-    steps[:,:,:] = 1
-    upper_right = img.copy()
-    blur_maps['upper_right'] = []
-    blur_maps['upper_right'].append(img.copy())
-
-    for idx in range(1, num_step+1):
-
-        upper_right[:-idx, idx:, :] += img[idx:, :-idx, :]
-        steps[:-idx, idx:, :] += 1
-        
-        blur_maps['upper_right'].append(upper_right / steps)
-
-    # image moves left
-    steps[:,:,:] = 1
-    left = img.copy()
-    blur_maps['left'] = []
-    blur_maps['left'].append(img.copy())
-
-    for idx in range(1, num_step+1):
-        
-        left[:, :-idx, :] += img[:, idx:, :]
-        steps[:, :-idx, :] += 1
-
-        blur_maps['left'].append(left / steps)
-
-    # image moves right
-    steps[:,:,:] = 1
-    right = img.copy()
-    blur_maps['right'] = []
-    blur_maps['right'].append(img.copy())
-
-    for idx in range(1, num_step+1):
-
-        right[:, idx:, :] += img[:, :-idx, :]
-        steps[:, idx:, :] += 1
-        blur_maps['right'].append(right / steps)
-   
-    # image moves lower_left
-    steps[:,:,:] = 1
-    lower_left = img.copy()
-    blur_maps['lower_left'] = []
-    blur_maps['lower_left'].append(img.copy())
-
-    for idx in range(1, num_step+1):
-
-        lower_left[idx:, :-idx, :] += img[:-idx, idx:, :]
-        steps[idx:, :-idx, :] += 1
-    
-        blur_maps['lower_left'].append(lower_left / steps)
-
-    # image moves lower
-    steps[:,:,:] = 1
-    lower = img.copy()
-    blur_maps['lower'] = []
-    blur_maps['lower'].append(img.copy())
-    
-    for idx in range(1, num_step+1):
-
-        lower[idx:, :, :] += img[:-idx, :, :]
-        steps[idx:, :, :] += 1
-    
-        blur_maps['lower'].append(lower / steps)
-
-    # image moves lower_right
-    steps[:,:,:] = 1
-    lower_right = img.copy()
-    blur_maps['lower_right'] = []
-    blur_maps['lower_right'].append(img.copy())
-
-    for idx in range(1, num_step+1):
-
-        lower_right[idx:, idx:, :] += img[:-idx, :-idx, :]
-        steps[idx:, idx:, :] += 1
-    
-        blur_maps['lower_right'].append(lower_right / steps)
-
-    
-    count_n = [0] * 9
-    for y in range(img_h):
-        for x in range(img_w):
-            dx, dy = flow[y, x]
-            
-            angle = vector_to_degree(dx, dy)
-            length = int(np.ceil(np.sqrt(dx * dx + dy * dy)))
-
-            if angle < np.pi / 8 or angle >=  15 / 8 * np.pi:
-                img_blur[y][x] = blur_maps['right'][length][y][x] # right[y][x]
-                count_n[0] += 1
-            elif  np.pi / 8 <= angle < 3 / 8 * np.pi:
-                img_blur[y][x] = blur_maps['upper_right'][length][y][x] # upper_right[y][x]
-                count_n[1] += 1
-            elif 3 / 8 * np.pi <= angle < 5 / 8 * np.pi:
-                img_blur[y][x] = blur_maps['upper'][length][y][x] # upper[y][x]
-                count_n[2] += 1
-            elif 5 / 8 * np.pi <= angle < 7 / 8 * np.pi:
-                img_blur[y][x] = blur_maps['upper_left'][length][y][x] # upper_left[y][x]
-                count_n[3] += 1
-            elif 7 / 8 * np.pi <= angle < 9 / 8 * np.pi:
-                img_blur[y][x] = blur_maps['left'][length][y][x] # left[y][x]
-                count_n[4] += 1
-            elif 9 / 8 * np.pi <= angle < 11 / 8 * np.pi:
-                img_blur[y][x] = blur_maps['lower_left'][length][y][x] # lower_left[y][x]
-                count_n[5] += 1
-            elif 11 / 8 * np.pi <= angle < 13 / 8 * np.pi:
-                img_blur[y][x] = blur_maps['lower'][length][y][x] # lower[y][x]
-                count_n[6] += 1
-            elif 13 / 8 * np.pi <= angle < 15 / 8 * np.pi:
-                img_blur[y][x] = blur_maps['lower_right'][length][y][x] # lower_right[y][x]
-                count_n[7] += 1
-            else:
-                print(angle)
-            '''
-            if dx == 0 and dy == 0: # do not move
-                img_blur[y][x] = img[y][x]
-                count_n[0] += 1
-            elif dx < 0 and dy < 0: # from upper_left
-                img_blur[y][x] = upper_left[y][x]
-                count_n[1] += 1
-            elif dx == 0 and dy < 0: # from upper
-                img_blur[y][x] = upper[y][x]
-                count_n[2] += 1
-            elif dx > 0 and dy < 0: # from upper right
-                img_blur[y][x] = upper_right[y][x]
-                count_n[3] += 1
-            elif dx < 0 and dy == 0: # from left
-                img_blur[y][x] = left[y][x]
-                count_n[4] += 1
-            elif dx > 0 and dy == 0: # from right
-                img_blur[y][x] = right[y][x]
-                count_n[5] += 1
-            elif dx < 0 and dy > 0: # from lower left
-                img_blur[y][x] = lower_left[y][x]
-                count_n[6] += 1
-            elif dx == 0 and dy > 0: # from lower
-                img_blur[y][x] = lower[y][x]
-                count_n[7] += 1
-            elif dx > 0 and dy > 0: # from lower right
-                img_blur[y][x] = lower_right[y][x]
-                count_n[8] += 1
-            '''
-
-    print('count_n: {}'.format(count_n))
-            
-    return img_blur
 
 def calculate_angle_distance_from_du_dv(du, dv, flagDegree=False):
     a = np.arctan2( dv, du )
@@ -390,39 +200,12 @@ def gaussian_noise(img, sigma):
     
     return (img * 255).astype(np.uint8)
 
-if __name__ == '__main__':
+def test_on_predefined_image():
     
-    
-    # setup directory
-    DATA_ROOT = '/data/datasets/wenshanw/tartanair/'
-    ENV_NAME = 'abandonedfactory_night'
-    LEVEL = 'Easy'
-    PATH = 'P000'
-    data_dir = os.path.join(DATA_ROOT, ENV_NAME, LEVEL, PATH)
-    save_img_path = 'output.png'
-
-    # left image
-    # left_img1_path = os.path.join(data_dir, 'image_left', '000000_left.png')
-    # left_img2_path = os.path.join(data_dir, 'image_left', '000001_left.png')
-    # flow_img_path = os.path.join(data_dir, 'flow', '000000_000001_flow.npy') 
-    
-    # sample code 
-    # imgfile1 = 'data/000380_left.png'
-    # imgfile2 = 'data/000381_left.png'
-    # flowfile = 'data/000380_000381_flow.npy'
-    
-    # left_img1_path = '/home/chaotec/tartanair_tools/processing/data/000010_left.png'
-    # left_img2_path = '/home/chaotec/tartanair_tools/processing/data/000009_left.png'
-    # flow_img_path = '/home/chaotec/tartanair_tools/processing/data/000010_000009_flow.npy'
-
     left_img1_path = './data/000010_left.png'
     left_img2_path = './data/000009_left.png'
     flow_img_path =  './data/000010_000009_flow.npy'
 
-    # img1 = load_rgb(imgfile1)
-    # img2 = load_rgb(imgfile2)
-    # flow = load_flow(flowfile)
-    
     img1 = load_rgb(left_img1_path)
     img2 = load_rgb(left_img2_path)
     flow = load_flow(flow_img_path)
@@ -435,28 +218,14 @@ if __name__ == '__main__':
     time_start =time.time()
     
     img_blur = add_motion_blur(img1.copy(), flow)
-    # img_blur = add_motion_approx(img1.copy(), flow, num_step=4)
     
     time_end = time.time()
     print('total time: {}'.format(time_end - time_start))
     
     visimg = np.concatenate((img1, img_blur, img2, flowvis), axis=0)
     visimg = cv2.resize(visimg, (0, 0), fx=0.5, fy=0.5)
-    cv2.imwrite(save_img_path, visimg)
+    cv2.imwrite('./img_collage.png', visimg)
     cv2.imwrite('./image_blur.png', img_blur)
-    
-    # image mask debugging
-    # img_diff = np.sum(np.abs(img_blur.astype(np.float32) - img1.astype(np.float32)), axis=-1)
-    # mask = img_diff < 2
-    # mask = img_diff.astype(np.float32) * 255
-    # cv2.imwrite('./mask.png', mask)
-
-    # motion mask
-    # flow_magnitude = np.sqrt(flow[:,:,0] * flow[:,:, 0] + flow[:,:,1] * flow[:,:,1])
-    # max_v = np.amax(flow_magnitude)
-    # min_v = np.amin(flow_magnitude)
-    # flow_mask = (flow_magnitude - min_v) / (max_v - min_v) * 255
-    # cv2.imwrite('./flow_mask.png', flow_mask)
     
     """
     ''' add noise to pixels '''
@@ -475,3 +244,66 @@ if __name__ == '__main__':
     cv2.imwrite('/home/chaotec/tartanair_tools/processing/gaussian_noise.png', img_gaussian)
     """
     
+def blur_image_multithread_wrapper(args):
+     
+    start_time = time.time()
+    
+    img_path = args[0]
+    flow_path = args[1]
+    save_dir = args[2]
+   
+    img_name = img_path.split('/')[-1]
+    save_img_path = os.path.join(save_dir, img_name)
+
+    img = load_rgb(img_path)
+    flow = load_flow(flow_path)
+    
+    img_blur = add_motion_blur(img, flow)
+    cv2.imwrite(save_img_path, img_blur.astype(np.uint8))
+    print('Deal with img: {}, take: {} secs and save to {}'.format(img_name, time.time() - start_time, save_img_path))
+
+def arg_parse():
+    
+    parser = argparse.ArgumentParser(description='The code for generating blurry images')
+
+    parser.add_argument('--workers', default=8, type=int, help='number of workers for muti-thread processing')
+
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    
+    args = arg_parse()
+
+    path_data_roots = ['/data/datasets/wenshanw/tartan_data/soulcity/Data_fast/P006', 
+                      '/data/datasets/wenshanw/tartan_data/hongkongalley/Data_fast/P005',
+                      '/data/datasets/wenshanw/tartan_data/ocean/Data_fast/P007',
+                      '/data/datasets/wenshanw/tartan_data/gascola/Data/P004']
+    # test_on_predefined_image()
+
+   
+    for path_data_root in path_data_roots:
+        
+        start_time = time.time()
+
+        left_img_dir = os.path.join(path_data_root, 'image_left')
+        reverse_flow_dir = os.path.join(path_data_root, 'flow_reverse')
+        save_blur_img_dir = os.path.join(path_data_root, 'image_left_blur')
+        
+        if not os.path.exists(save_blur_img_dir):
+            os.makedirs(save_blur_img_dir)
+        
+        left_img_paths = glob.glob(os.path.join(left_img_dir, '*.png'))
+        img_ids = [left_img_path.split('/')[-1].split('_')[0] for left_img_path in left_img_paths]
+        img_ids = sorted(img_ids)
+
+        left_img_paths = [os.path.join(left_img_dir, img_id + '_left.png') for img_id in img_ids[1:]]
+        flow_paths = [os.path.join(reverse_flow_dir, img_id2 + '_' + img_id1 + '_flow.npy')\
+                for img_id1, img_id2 in zip(img_ids[:-1], img_ids[1:])]
+        save_blur_img_dirs = [save_blur_img_dir] * len(flow_paths)
+        
+        data = list(zip(left_img_paths, flow_paths, save_blur_img_dirs))
+
+        p = multiprocessing.Pool(args.workers)
+        p.map(blur_image_multithread_wrapper, data)
+
+        print('Deal with path {} takes {} secs'.format(path_data_root, time.time() - start_time))
