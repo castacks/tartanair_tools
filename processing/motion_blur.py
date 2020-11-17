@@ -274,6 +274,7 @@ def arg_parse():
     parser.add_argument('--data_root', type=str, help='the data root directory')
     parser.add_argument('--data_types', type=str, help='the data root directory')
     parser.add_argument('--left_right', type=str, help='the data root directory')
+    parser.add_argument('--exposure_rate', type=float, help='the data root directory')
 
     return parser.parse_args()
 
@@ -284,7 +285,7 @@ def blur_one_trajectory(args, traj_dir):
 
     img_dir = os.path.join(traj_dir, args.left_right)
     reverse_flow_dir = os.path.join(traj_dir, 'flow_reverse')
-    save_blur_img_dir = os.path.join(traj_dir, '{}_blur'.format(args.left_right))
+    save_blur_img_dir = os.path.join(traj_dir, '{}_blur_{}'.format(args.left_right, args.exposure_rate))
 
     if not os.path.exists(save_blur_img_dir):
             os.makedirs(save_blur_img_dir)
