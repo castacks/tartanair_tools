@@ -254,6 +254,10 @@ def blur_image_multithread_wrapper(args):
    
     img_name = img_path.split('/')[-1]
     save_img_path = os.path.join(save_dir, img_name)
+    
+    if os.path.exists(save_img_path): 
+        print('{} exists.'.format(save_img_path))
+        return
 
     img = load_rgb(img_path)
     flow = load_flow(flow_path)
@@ -267,43 +271,70 @@ def arg_parse():
     parser = argparse.ArgumentParser(description='The code for generating blurry images')
 
     parser.add_argument('--workers', default=8, type=int, help='number of workers for muti-thread processing')
+    parser.add_argument('--data_root', type=str, help='the data root directory')
+    parser.add_argument('--data_types', type=str, help='the data root directory')
+    parser.add_argument('--left_right', type=str, help='the data root directory')
 
     return parser.parse_args()
+
+def blur_one_trajectory(args, traj_dir):
+    
+    print('Deal with {}'.format(traj_dir))
+    start_time = time.time()
+
+    img_dir = os.path.join(traj_dir, args.left_right)
+    reverse_flow_dir = os.path.join(traj_dir, 'flow_reverse')
+    save_blur_img_dir = os.path.join(traj_dir, '{}_blur'.format(args.left_right))
+
+    if not os.path.exists(save_blur_img_dir):
+            os.makedirs(save_blur_img_dir)
+    img_paths = glob.glob(os.path.join(img_dir, '*.png'))
+    img_ids = [img_path.split('/')[-1].split('_')[0] for img_path in img_paths]
+    img_ids = sorted(img_ids)
+
+    img_paths = [os.path.join(img_dir, img_id + '_left.png') for img_id in img_ids[1:]]
+    flow_paths = [os.path.join(reverse_flow_dir, img_id2 + '_' + img_id1 + '_flow.npy')\
+                for img_id1, img_id2 in zip(img_ids[:-1], img_ids[1:])]
+    save_blur_img_dirs = [save_blur_img_dir] * len(flow_paths)
+        
+    data = list(zip(img_paths, flow_paths, save_blur_img_dirs))
+
+    p = multiprocessing.Pool(args.workers)
+    p.map(blur_image_multithread_wrapper, data)
+
+    print('Deal with path {} takes {} secs'.format(traj_dir, time.time() - start_time))
+
 
 if __name__ == '__main__':
     
     args = arg_parse()
 
-    path_data_roots = ['/data/datasets/wenshanw/tartan_data/soulcity/Data_fast/P006', 
-                      '/data/datasets/wenshanw/tartan_data/hongkongalley/Data_fast/P005',
-                      '/data/datasets/wenshanw/tartan_data/ocean/Data_fast/P007',
-                      '/data/datasets/wenshanw/tartan_data/gascola/Data/P004']
+    # path_data_roots = ['/data/datasets/wenshanw/tartan_data/soulcity/Data_fast/P006', 
+    #                   '/data/datasets/wenshanw/tartan_data/hongkongalley/Data_fast/P005',
+    #                   '/data/datasets/wenshanw/tartan_data/ocean/Data_fast/P007',
+    #                   '/data/datasets/wenshanw/tartan_data/gascola/Data/P004']
     # test_on_predefined_image()
-
-   
-    for path_data_root in path_data_roots:
+    # path_data_roots = ['/home/chaotec/chessboard/P000/',
+    #                    '/home/chaotec/chessboard/P001/',
+    #                    '/home/chaotec/chessboard/P002/',
+    #                    '/home/chaotec/chessboard/P003/']
+    
+    data_types = args.data_types.split(',')
+    
+    for env_dir in os.listdir(args.data_root):
         
-        start_time = time.time()
-
-        left_img_dir = os.path.join(path_data_root, 'image_left')
-        reverse_flow_dir = os.path.join(path_data_root, 'flow_reverse')
-        save_blur_img_dir = os.path.join(path_data_root, 'image_left_blur')
+        env_dir = os.path.join(args.data_root, env_dir)
         
-        if not os.path.exists(save_blur_img_dir):
-            os.makedirs(save_blur_img_dir)
+        if not os.path.isdir(env_dir): continue
         
-        left_img_paths = glob.glob(os.path.join(left_img_dir, '*.png'))
-        img_ids = [left_img_path.split('/')[-1].split('_')[0] for left_img_path in left_img_paths]
-        img_ids = sorted(img_ids)
+        for data_type in data_types:
+           
+            data_dir = os.path.join(env_dir, data_type)
+            
+            if not os.path.exists(data_dir): break
 
-        left_img_paths = [os.path.join(left_img_dir, img_id + '_left.png') for img_id in img_ids[1:]]
-        flow_paths = [os.path.join(reverse_flow_dir, img_id2 + '_' + img_id1 + '_flow.npy')\
-                for img_id1, img_id2 in zip(img_ids[:-1], img_ids[1:])]
-        save_blur_img_dirs = [save_blur_img_dir] * len(flow_paths)
-        
-        data = list(zip(left_img_paths, flow_paths, save_blur_img_dirs))
+            traj_dirs = glob.glob(os.path.join(data_dir, 'P*'))
+            
+            for traj_dir in traj_dirs:
 
-        p = multiprocessing.Pool(args.workers)
-        p.map(blur_image_multithread_wrapper, data)
-
-        print('Deal with path {} takes {} secs'.format(path_data_root, time.time() - start_time))
+                blur_one_trajectory(args, traj_dir)
