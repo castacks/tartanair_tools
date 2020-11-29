@@ -232,6 +232,12 @@ def get_args():
 
     parser.add_argument('--target-root', default='',
                         help='copying flow to another drive, target root data folder that contrains environment folders')
+    
+    # an argument added by Chao-Te Chou 
+    parser.add_argument('--eye', type=str, default='left',
+                        help='whether to process the left eye data or the right eye data')
+    parser.add_argument('--num_split', default=1, type=int, help='split the data such that it can be processed on different nodes')
+    parser.add_argument('--split_id', default=0, type=int, help='the split_id th share of data to run on the node')
 
     args = parser.parse_args()
 

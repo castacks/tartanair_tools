@@ -29,6 +29,31 @@ CROSS_OCC = 1
 SELF_OCC  = 10
 OUT_OF_FOV = 100
 
+def flow32to16(flow32, mask8):
+    '''
+    flow_32b (float32) [-512.0, 511.984375]
+    flow_16b (uint16) [0 - 65535]
+    flow_16b = (flow_32b * 64) + 32768  
+    '''
+
+    # mask flow values that out of the threshold -512.0 ~ 511.984375
+    mask1 = flow32 < -512.0
+    mask2 = flow32 > 511.984375
+
+    mask = mask1[:,:,0] + mask2[:,:,0] + mask1[:,:,1] + mask2[:,:,1]
+
+    # convert 32bit to 16bit
+    h, w, c = flow32.shape
+    flow16 = np.zeros((h, w, 3), dtype=np.uint16)
+    flow_temp = (flow32 * 64) + 32768
+    flow_temp = np.clip(flow_temp, 0, 65535)
+    flow_temp = np.round(flow_temp)
+    flow16[:,:,:2] = flow_temp.astype(np.uint16)
+    mask8[mask] = 200
+    flow16[:,:,2] = mask8.astype(np.uint16)
+
+    return flow16
+    
 class FileLogger():
     def __init__(self, filename):
         if isfile(filename):
@@ -324,8 +349,10 @@ def save_flow(fnBase, flowSuffix, maskSuffix, du, dv, maskFOV=None, maskOcc=None
 
     if ( maskFOV is not None ):
         mask[maskFOV] = OUT_OF_FOV
-
-    np.save( "%s%s.npy" % (fnBase, flowSuffix), flow )
+    
+    flow16 = flow32to16(flow, mask)
+    # np.save( "%s%s.npy" % (fnBase, flowSuffix), flow )
+    cv2.imwrite("%s%s.png" % (fnBase, flowSuffix), flow16)
     np.save( "%s%s.npy" % (fnBase, maskSuffix), mask )
 
 def coordinate2distance(cordinates):
@@ -519,9 +546,9 @@ def worker(name, jq, rq, lq, p, args, trajpath, flowpath):
     # Camera.
     cam = CameraBase(args.focal, [args.image_height, args.image_width])
 
-    depthDir      = trajpath + "/" + 'depth_left'
-    imgDir        = trajpath + "/" + 'image_left'
-    depthTail     = '_left_depth.npy' #inputParams["depthSuffix"] + inputParams["depthExt"]
+    depthDir      = os.path.join(trajpath, 'depth_{}'.format(args.eye)) # trajpath + "/" + 'depth_left'
+    imgDir        = os.path.join(trajpath, 'image_{}'.format(args.eye)) # trajpath + "/" + 'image_left'
+    depthTail     = '_{}_depth.npy'.format(args.eye) #inputParams["depthSuffix"] + inputParams["depthExt"]
 
     count = 0
 
@@ -555,7 +582,7 @@ def worker(name, jq, rq, lq, p, args, trajpath, flowpath):
             warppedImg, maskedError, invalidnum = \
                 process_single_process(name, flowpath, 
                     imgDir, poseID_0, poseID_1, poseDataLine_0, poseDataLine_1, 
-                    depth_0, depth_1, cam, save_flow_image=args.save_flow_image)
+                    depth_0, depth_1, cam, imgSuffix='_{}'.format(args.eye), save_flow_image=args.save_flow_image)
 
             rq.put( { "idx": job["idx"], \
                 "poseID_0": poseID_0, "poseID_1": poseID_1, 
@@ -775,6 +802,17 @@ def process_trajectory(args, imgpath, posefile, flowpath, trajpath):
 
     print("Main: Done.")
 
+def select_split(data, num_split, split_id):
+    
+    if num_split == 1: return data
+
+    n = len(data)
+
+    left  = int(n / num_split * split_id)
+    right = int(n / num_split * (split_id + 1))
+
+    return data[left:right]
+
 # python flow_and_warping_error.py --data-root '' --data-folders '' -- env-folders '' --index-step 2 --flow-outdir flow2 --np 8
 if __name__ == "__main__":
     
@@ -792,6 +830,9 @@ if __name__ == "__main__":
     print('Detected envs {}'.format(env_folders))
 
     logf = FileLogger( os.path.join(data_root_dir, 'flow_error.log') )
+    
+    # save each trajectory path
+    data = []
 
     for env_folder in env_folders:
 
@@ -834,9 +875,9 @@ if __name__ == "__main__":
                     mkdir(flowpath)
                     logf.logline('Flow folder exists, create new ' + flowpath)
                     print('Flow folder exists, create new ' + flowpath)
-
-                imgpath  = os.path.join(trajpath, 'image_left') # trajpath +'/image_left'
-                posefile = os.path.join(trajpath, 'pose_left.txt') # trajpath +'/pose_left.txt'
+                
+                imgpath  = os.path.join(trajpath, 'image_{}'.format(args.eye)) # trajpath +'/image_left'
+                posefile = os.path.join(trajpath, 'pose_{}.txt'.format(args.eye)) # trajpath +'/pose_left.txt'
 
                 if not isdir(imgpath):
                     
@@ -851,9 +892,11 @@ if __name__ == "__main__":
                     print('    !!pose file missing ' + posefile)
                     
                     continue
-                
-                process_trajectory(args, imgpath, posefile, flowpath, trajpath)
-                
-                # break # for debugging
-        
-        # break # for debugging
+                data.append([imgpath, posefile, flowpath, trajpath])   
+                # process_trajectory(args, imgpath, posefile, flowpath, trajpath)
+    data_selected = select_split(data, args.num_split, args.split_id)
+    print('select {} data from {} data'.format(len(data_selected), len(data)))
+
+    # for d in data_selected:
+        # print('flowpath: {}'.format(d[2]))
+        # process_trajectory(args, d[0], d[1], d[2], d[3])
