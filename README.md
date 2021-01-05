@@ -211,6 +211,8 @@ More information about the [CVPR Visual SLAM challenge](https://sites.google.com
 
 * The [stereo track](https://www.aicrowd.com/challenges/tartanair-visual-slam-stereo-track)
 
+Now the CVPR challenge has completed, if you need the <b> ground truth poses </b> for the above testing trajectories, please send an email to [tartanair@hotmail.com](tartanair@hotmail.com). 
+
 ## Evaluation tools
 
 Following the [TUM dataset](https://vision.in.tum.de/data/datasets/rgbd-dataset) and the [KITTI dataset](http://www.cvlibs.net/datasets/kitti/eval_odometry.php), we adopt three metrics: absolute trajectory error (ATE), the relative pose error (RPE), a modified version of KITTI VO metric. 
