@@ -2,6 +2,8 @@
 This repository provides sample codes and scripts for accessing the training and testing data, as well as evaluation tools. Please refer to [TartanAir](http://theairlab.org/tartanair-dataset) for more information about the dataset. 
 You can also reach out to contributors on the associated [AirSim GitHub](https://github.com/microsoft/AirSim).
 
+This dataset has been used to train the first generalizable learning-based visual odometry [TartanVO](http://theairlab.org/tartanvo/), which achieved better performance than geometry-based VO in challenging cases. Please check out the [paper](https://arxiv.org/pdf/2011.00359.pdf) and published [TartanVO code](https://github.com/castacks/tartanvo). 
+
 ## Download the training data
 
 The data is divided into two levels (Easy and Hard) in terms of the motion patterns. It is organized in trajectory folders. You can download data from different cameras (left or right), with different data types (RGB, depth, segmentation, camera pose, and flow). Please see [data type](data_type.md) page for the camera intrinsics, extrinsics and other information. 
