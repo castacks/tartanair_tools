@@ -34,7 +34,7 @@ height = 480
 
 The depth maps are stored as 640x480 16-bit numpy array in NPY format. In the Unreal Engine, the environment usually has a sky sphere at a large distance. So the infinite distant object such as the sky has a large depth value (e.g. 10000) instead of an infinite number. 
 
-The unit of the depth value is meter. The baseline between the left and right cameras are 0.25m. 
+The unit of the depth value is meter. The baseline between the left and right cameras is 0.25m. 
 
 * Load the depth image:
 ```
@@ -72,11 +72,11 @@ mask = np.load(MASKFILENAME)
 
 ### Pose file
 
-The camera pose file is a text file containing the translation and orientation of the camera in a fixed coordinate frame. Note that also our automatic evaluation tool expects both the ground truth trajectory and the estimated trajectory to be in this format. 
+The camera pose file is a text file containing the translation and orientation of the camera in a fixed coordinate frame. Note that our automatic evaluation tool expects both the ground truth trajectory and the estimated trajectory to be in this format. 
 
 * Each line in the text file contains a single pose.
 
-* The number of lines/poses must be the same as the number of image frames in that trajectory. 
+* The number of lines/poses is the same as the number of image frames in that trajectory. 
 
 * The format of each line is '**tx ty tz qx qy qz qw**'. 
 
