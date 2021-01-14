@@ -59,7 +59,7 @@ depth = np.load(FILENAME)
 
 ### Optical flow
 
-The optical flow maps are saved as a float32 numpy array, which is calculated based on the ground truth depth and ground truth camera motion, using [this](https://github.com/huyaoyu/ImageFlow) code. Dynamic objects and occlusions are masked by the mask file, which is a uint8 numpy array. 
+The optical flow maps are saved as a float32 numpy array, which is calculated based on the ground truth depth and ground truth camera motion, using [this](https://github.com/huyaoyu/ImageFlow) code. Dynamic objects and occlusions are masked by the mask file, which is a uint8 numpy array. We currently provide the optical flow for the left camera. 
 
 * Load the optical flow
 ```
