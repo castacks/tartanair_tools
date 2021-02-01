@@ -51,6 +51,7 @@ def flow32to16(flow32, mask8):
     flow16[:,:,:2] = flow_temp.astype(np.uint16)
     mask8[mask] = 200
     flow16[:,:,2] = mask8.astype(np.uint16)
+    
 
     return flow16
     
@@ -352,6 +353,7 @@ def save_flow(fnBase, flowSuffix, maskSuffix, du, dv, maskFOV=None, maskOcc=None
     
     flow16 = flow32to16(flow, mask)
     # np.save( "%s%s.npy" % (fnBase, flowSuffix), flow )
+    # print('flow16 info: np.amax(flow16): {}, np.amin(flow16): {}'.format(np.amax(flow16), np.amin(flow16)))
     cv2.imwrite("%s%s.png" % (fnBase, flowSuffix), flow16)
     np.save( "%s%s.npy" % (fnBase, maskSuffix), mask )
 
@@ -401,11 +403,11 @@ def process_single_process(name, outDir, \
     imgSuffix='_left', imgExt='.png', distanceRange=1000, save_flow_image=True):
     
     fnBase = "%s/%s_%s" % (outDir, poseID_0, poseID_1)
-    save_flow_path = "%s%s.npy" % (fnBase, "_flow")
+    save_flow_path = "%s%s.png" % (fnBase, "_flow")
     save_mask_path = "%s%s.npy" % (fnBase, "_mask")
 
     if os.path.exists(save_flow_path) and os.path.exists(save_mask_path):
-        print('save_flow_path, {}, has been created'.format(save_flow_path))
+        # print('save_flow_path, {}, has been created'.format(save_flow_path))
         return 0, 0, 0
 
     # Get the pose of the first position.
@@ -897,6 +899,11 @@ if __name__ == "__main__":
     data_selected = select_split(data, args.num_split, args.split_id)
     print('select {} data from {} data'.format(len(data_selected), len(data)))
 
-    # for d in data_selected:
-        # print('flowpath: {}'.format(d[2]))
-        # process_trajectory(args, d[0], d[1], d[2], d[3])
+    for d in data_selected:
+        print('===================== Trajectory Information =====================')
+        print('imgpath: {}'.format(d[0]))
+        print('posefile: {}'.format(d[1]))
+        print('flowpath: {}'.format(d[2]))
+        print('trajpath: {}'.format(d[3]))
+        print('==================================================================')
+        process_trajectory(args, d[0], d[1], d[2], d[3])

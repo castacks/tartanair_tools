@@ -10,6 +10,18 @@ import numpy as np
 from skimage.util import random_noise
 from skimage.transform import rescale, resize
 
+def flow16to32(flow16):
+    '''
+    flow_32b (float32) [-512.0, 511.984375]
+    flow_16b (uint16) [0 - 65535]
+    flow_32b = (flow16 -32768) / 64
+    '''
+    flow32 = flow16[:,:,:2].astype(np.float32)
+    flow32 = (flow32 - 32768) / 64.0
+    mask8 = flow16[:,:,2].astype(np.uint8)
+    return flow32, mask8
+
+
 def coordinate_maps(img_h, img_w):
     '''
     Input:
@@ -17,7 +29,7 @@ def coordinate_maps(img_h, img_w):
         img_w: the width of the image
     Output:
         x_coord_map: x coordinate map with shape (img_h, img_w)
-        y_coord_map: y coordinate map with shape (img_h, img_w)s
+        y_coord_map: y coordinate map with shape (img_h, img_w)
     '''
 
     x_coord_map = np.arange(img_w).reshape((1, -1))
@@ -28,7 +40,7 @@ def coordinate_maps(img_h, img_w):
 
     return x_coord_map, y_coord_map
 
-def add_motion_blur(img, flow):
+def add_motion_blur(img, flow, exposure_rate=1.0):
     '''
     Input: 
         img: RGB image with shape (H, W, 3) at time t
@@ -37,11 +49,17 @@ def add_motion_blur(img, flow):
         img_blur: the blurred image with shape (H, W, 3)
     '''
 
+    # get image information
     img_h, img_w = img.shape[:2]
-
+    
+    # compute different exposure rate by changing flow length
+    flow *= exposure_rate
+    
+    # declare some variables
     img_blur = np.copy(img).astype(np.float32)
     img_counter = np.ones((img_h, img_w))
     
+    # (h, w, c) -> (h, w, 1, c) to avoid expand_dims in for loop
     img = np.expand_dims(img.astype(np.float32), axis=2)
 
     # figure the length of optical flow
@@ -251,77 +269,78 @@ def blur_image_multithread_wrapper(args):
     img_path = args[0]
     flow_path = args[1]
     save_dir = args[2]
-   
+    exposure_rate = args[3]
+
     img_name = img_path.split('/')[-1]
     save_img_path = os.path.join(save_dir, img_name)
     
-    if os.path.exists(save_img_path): 
-        print('{} exists.'.format(save_img_path))
+    if os.path.exists(save_img_path):
+        # print('{} exists.'.format(img_name))
         return
-
     img = load_rgb(img_path)
     flow = load_flow(flow_path)
     
-    img_blur = add_motion_blur(img, flow)
+    img_blur = add_motion_blur(img, flow, exposure_rate)
+    
     cv2.imwrite(save_img_path, img_blur.astype(np.uint8))
-    print('Deal with img: {}, take: {} secs and save to {}'.format(img_name, time.time() - start_time, save_img_path))
+    
+    print('Deal with img: {}, take: {} secs, exposure_rate: {}'.format(img_name, time.time() - start_time, exposure_rate))
 
 def arg_parse():
     
     parser = argparse.ArgumentParser(description='The code for generating blurry images')
 
     parser.add_argument('--workers', default=8, type=int, help='number of workers for muti-thread processing')
+    
     parser.add_argument('--data_root', type=str, help='the data root directory')
     parser.add_argument('--data_types', type=str, help='the data root directory')
     parser.add_argument('--left_right', type=str, help='the data root directory')
-    parser.add_argument('--exposure_rate', type=float, help='the data root directory')
+    
+    parser.add_argument('--exposure_rate', type=float, default=1.0, help='the data root directory')
+    
+    parser.add_argument('--num_split', default=1, type=int, help='split the data such that it can be processed on different nodes')
+    parser.add_argument('--split_id', default=0, type=int, help='the split_id th share of data to run on the node')
+
 
     return parser.parse_args()
 
 def blur_one_trajectory(args, traj_dir):
     
     print('Deal with {}'.format(traj_dir))
+    
     start_time = time.time()
 
     img_dir = os.path.join(traj_dir, args.left_right)
     reverse_flow_dir = os.path.join(traj_dir, 'flow_reverse')
     save_blur_img_dir = os.path.join(traj_dir, '{}_blur_{}'.format(args.left_right, args.exposure_rate))
 
-    if not os.path.exists(save_blur_img_dir):
-            os.makedirs(save_blur_img_dir)
+    if not os.path.exists(save_blur_img_dir): os.makedirs(save_blur_img_dir)
+    
     img_paths = glob.glob(os.path.join(img_dir, '*.png'))
     img_ids = [img_path.split('/')[-1].split('_')[0] for img_path in img_paths]
     img_ids = sorted(img_ids)
 
-    img_paths = [os.path.join(img_dir, img_id + '_left.png') for img_id in img_ids[1:]]
+    img_paths = [os.path.join(img_dir, img_id + '_{}.png'.format(args.left_right.split('_')[-1])) for img_id in img_ids[1:]]
     flow_paths = [os.path.join(reverse_flow_dir, img_id2 + '_' + img_id1 + '_flow.npy')\
                 for img_id1, img_id2 in zip(img_ids[:-1], img_ids[1:])]
     save_blur_img_dirs = [save_blur_img_dir] * len(flow_paths)
-        
-    data = list(zip(img_paths, flow_paths, save_blur_img_dirs))
+    
+    exposure_rates = [args.exposure_rate] * len(img_paths) 
+
+    data = list(zip(img_paths, flow_paths, save_blur_img_dirs, exposure_rates))
 
     p = multiprocessing.Pool(args.workers)
     p.map(blur_image_multithread_wrapper, data)
-
+    p.close()
+    p.join()
     print('Deal with path {} takes {} secs'.format(traj_dir, time.time() - start_time))
 
-
-if __name__ == '__main__':
-    
-    args = arg_parse()
-
-    # path_data_roots = ['/data/datasets/wenshanw/tartan_data/soulcity/Data_fast/P006', 
-    #                   '/data/datasets/wenshanw/tartan_data/hongkongalley/Data_fast/P005',
-    #                   '/data/datasets/wenshanw/tartan_data/ocean/Data_fast/P007',
-    #                   '/data/datasets/wenshanw/tartan_data/gascola/Data/P004']
-    # test_on_predefined_image()
-    # path_data_roots = ['/home/chaotec/chessboard/P000/',
-    #                    '/home/chaotec/chessboard/P001/',
-    #                    '/home/chaotec/chessboard/P002/',
-    #                    '/home/chaotec/chessboard/P003/']
+def find_all_traj_dirs(args):
     
     data_types = args.data_types.split(',')
     
+    all_traj_dirs = []
+
     for env_dir in os.listdir(args.data_root):
         
         env_dir = os.path.join(args.data_root, env_dir)
@@ -336,6 +355,46 @@ if __name__ == '__main__':
 
             traj_dirs = glob.glob(os.path.join(data_dir, 'P*'))
             
-            for traj_dir in traj_dirs:
+            all_traj_dirs.extend(traj_dirs) 
 
-                blur_one_trajectory(args, traj_dir)
+    return all_traj_dirs
+
+def run_all_trajs(args, traj_dirs):
+
+    for traj_dir in traj_dirs:
+        blur_one_trajectory(args, traj_dir)
+
+def select_split(traj_dirs, num_split, split_id):
+    
+    if num_split == 1: return traj_dirs
+
+    n = len(traj_dirs)
+
+    left  = int(n / num_split * split_id)
+    right = int(n / num_split * (split_id + 1))
+
+    return traj_dirs[left:right]
+
+if __name__ == '__main__':
+    
+    args = arg_parse()
+    '''
+    path_data_roots = ['/data/datasets/wenshanw/tartan_data/soulcity/Data_fast/P006', 
+                       '/data/datasets/wenshanw/tartan_data/hongkongalley/Data_fast/P005',
+                       '/data/datasets/wenshanw/tartan_data/ocean/Data_fast/P007',
+                       '/data/datasets/wenshanw/tartan_data/gascola/Data/P004']
+    '''
+    # test_on_predefined_image()
+    # path_data_roots = ['/home/chaotec/chessboard/P000/',
+    #                    '/home/chaotec/chessboard/P001/',
+    #                    '/home/chaotec/chessboard/P002/',
+    #                    '/home/chaotec/chessboard/P003/']
+
+    # run_all_trajs(args, path_data_roots)
+    
+    traj_dirs = find_all_traj_dirs(args)
+    traj_dirs_selected = select_split(traj_dirs, args.num_split, args.split_id)
+    print('{} trajectories and {} trajectories are selected'.format(len(traj_dirs), len(traj_dirs_selected)))
+
+    run_all_trajs(args, traj_dirs_selected)
+    
