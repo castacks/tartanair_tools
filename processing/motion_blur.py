@@ -43,8 +43,8 @@ def coordinate_maps(img_h, img_w):
 def add_motion_blur(img, flow, exposure_rate=1.0):
     '''
     Input: 
-        img: RGB image with shape (H, W, 3) at time t
-        flow: a numpy array with shape (H, W, 2) at time t-> t+1
+        img: RGB image with shape (H, W, 3) at time t + 1
+        flow: a numpy array with shape (H, W, 2) at time t+1 -> t
     Output:
         img_blur: the blurred image with shape (H, W, 3)
     '''
@@ -80,15 +80,16 @@ def add_motion_blur(img, flow, exposure_rate=1.0):
             
             xn = xn_coord_map[y0][x0] # x_{t+1} = x_{t} + dx
             yn = yn_coord_map[y0][x0] # y_{t+1} = y_{t} + dy
-            N = Ns[y0][x0]
+            # N = Ns[y0][x0]
+            N = max_N
 
             delta_x = (xn - x0) / (N - 1) if not N == 1 else 0
             delta_y = (yn - y0) / (N - 1) if not N == 1 else 0
             x_path = (dic[N] * delta_x + x0)[0:].astype(np.int32)
             y_path = (dic[N] * delta_y + y0)[0:].astype(np.int32)
 
-            img_blur[y_path, x_path] += img[y0][x0]
-            img_counter[y_path, x_path] += 1
+            img_blur[y_path, x_path] += (img[y0][x0]) * (max_N / N)
+            img_counter[y_path, x_path] += (max_N / N)
 
 
     cnt = np.expand_dims(img_counter, axis=-1)
