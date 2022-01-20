@@ -211,7 +211,7 @@ More information about the [CVPR Visual SLAM challenge](https://sites.google.com
 
 * The [stereo track](https://www.aicrowd.com/challenges/tartanair-visual-slam-stereo-track)
 
-Now the CVPR challenge has completed, if you need the <b> ground truth poses </b> for the above testing trajectories, please send an email to [tartanair@hotmail.com](tartanair@hotmail.com). 
+Now the CVPR challenge has completed, the <b> ground truth poses </b> for the above testing trajectories are available [here](https://cmu.box.com/shared/static/3p1sf0eljfwrz4qgbpc6g95xtn2alyfk.zip). If you need any further support, please send an email to [tartanair@hotmail.com](tartanair@hotmail.com). 
 
 ## Evaluation tools
 
