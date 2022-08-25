@@ -1,4 +1,4 @@
-### GRB Image
+### RGB Image
 
 The color images are stored as 640x480 8-bit RGB images in PNG format.
 
