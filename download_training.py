@@ -46,7 +46,7 @@ def get_args():
     return args
 
 def _help():
-    print ''
+    print ('')
 
 if __name__ == '__main__':
     args = get_args()
@@ -124,7 +124,7 @@ if __name__ == '__main__':
 
     print('{} files are going to be downloaded...'.format(len(downloadlist)))
     for fileurl in downloadlist:
-        print fileurl
+        print (fileurl)
 
     for fileurl in downloadlist:
         zf = fileurl.split('/')
@@ -155,5 +155,5 @@ if __name__ == '__main__':
             cmd = 'azcopy copy ' + fileurl + ' ' + targetfile 
         else:
             cmd = 'wget -r -O ' + targetfile + ' ' + fileurl
-        print cmd
+        print (cmd)
         system(cmd)
