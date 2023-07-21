@@ -1,3 +1,5 @@
+NOTE: Due to an Azure sponsorship issue, Our dataset is temporally offline. Sorry for the inconvenience! We are working on bringing it back ASAP! 
+
 # TartanAir dataset: AirSim Simulation Dataset for Simultaneous Localization and Mapping
 This repository provides sample code and scripts for accessing the training and testing data, as well as evaluation tools. Please refer to [TartanAir](http://theairlab.org/tartanair-dataset) for more information about the dataset. 
 You can also reach out to contributors on the associated [AirSim GitHub](https://github.com/microsoft/AirSim).
