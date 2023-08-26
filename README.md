@@ -1,4 +1,5 @@
-# We are now hosting the dataset on our own server at CMU. The downloading speed might not be as fast as before. For researchers outside US, please consider using a good VPN. If anyone or research group is interested in hosting our dataset, please contact wenshanw@andrew.cmu.edu. 
+# The dataset is back online! 
+We are now hosting the dataset on our own server at CMU. The downloading speed might not be as fast as before. For researchers outside US, please consider using a good VPN. If anyone or any research group is interested in hosting our dataset, please contact wenshanw@andrew.cmu.edu. 
 
 
 # TartanAir dataset: AirSim Simulation Dataset for Simultaneous Localization and Mapping
