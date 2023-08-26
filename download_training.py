@@ -155,5 +155,7 @@ if __name__ == '__main__':
         #     cmd = 'azcopy copy ' + fileurl + ' ' + targetfile 
         # else:
         cmd = 'wget -r -O ' + targetfile + ' ' + fileurl
-        print (cmd)
-        system(cmd)
+        ret = system(cmd)
+
+        if ret == 2: # ctrl-c
+            break

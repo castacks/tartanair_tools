@@ -203,7 +203,7 @@ More information about the [CVPR Visual SLAM challenge](https://sites.google.com
 
 * The [stereo track](https://www.aicrowd.com/challenges/tartanair-visual-slam-stereo-track)
 
-Now the CVPR challenge has completed, the <b> ground truth poses </b> for the above testing trajectories are available [here](https://cmu.box.com/shared/static/3p1sf0eljfwrz4qgbpc6g95xtn2alyfk.zip). If you need any further support, please send an email to [tartanair@hotmail.com](tartanair@hotmail.com). 
+Now the CVPR challenge has completed, the <b> ground truth poses </b> for the above testing trajectories are available [here](https://cmu.box.com/shared/static/3p1sf0eljfwrz4qgbpc6g95xtn2alyfk.zip). If you need any further support, please send an email to [wenshanw@andrew.cmu.edu](wenshanw@andrew.cmu.edu). 
 
 ## Evaluation tools
 
@@ -231,7 +231,7 @@ More technical details are available in the [TartanAir paper](https://arxiv.org/
 ```
 
 ## Contact 
-Email tartanair@hotmail.com if you have any questions about the data source. To post problems in the Github issue is also welcome. You can also reach out to contributors on the associated [GitHub](https://github.com/microsoft/AirSim).
+Email wenshanw@andrew.cmu.edu if you have any questions about the data source. To post problems in the Github issue is also welcome. You can also reach out to contributors on the associated [GitHub](https://github.com/microsoft/AirSim).
 
 ## License
 [This software is BSD licensed.](https://opensource.org/licenses/BSD-3-Clause)
