@@ -1,4 +1,4 @@
-# NOTE: Due to an Azure sponsorship issue, Our dataset is temporally offline. Sorry for the inconvenience! We are working on bringing it back ASAP! 
+# We are now hosting the dataset on our own server at CMU. The downloading speed might not be as fast as before. For researchers outside US, please consider using a good VPN. If anyone or research group is interested in hosting our dataset, please contact wenshanw@andrew.cmu.edu. 
 
 
 # TartanAir dataset: AirSim Simulation Dataset for Simultaneous Localization and Mapping
@@ -119,19 +119,7 @@ python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow
 ```
 
 ---
-**NOTE**
 
-We found that using AzCopy, which is a tool provided by MicroSoft, is much faster than directly downloading by the URLs. Please try the following steps if you want to accelerate the downloading process. 
-
-1. Download the [AzCopy](https://docs.microsoft.com/en-us/azure/storage/common/storage-use-azcopy-v10) and put the executable to your system path. 
-
-2. Run the above commands with a --azcopy tag. 
-
----
-
-### Access the data using Azure virtual machine
-
-Yet another way to access the data is to use an Azure virtual machine. In this way, you don't have to download the data to your local machine. You can use [Azure SDKs](https://github.com/Azure/azure-sdk-for-python) to access the data on the cloud. [Here](TartanAir_Sample.ipynb) is a sample notebook for accessing and visualizing the data. **NOTE: This sample notebook can only be used on Azure. To download the data to your local machine, please refer to the download instructions [here](https://github.com/castacks/tartanair_tools#download-data-to-your-local-machine) or the [dataset website](http://theairlab.org/tartanair-dataset) for the sample data.**
 
 ## Download the testing data for the CVPR Visual SLAM challenge
 
@@ -140,7 +128,7 @@ You can click the download links below. In Linux system, you can also run the fo
 wget -r -i download_cvpr_slam_test.txt
 ``` 
 
-* [Monocular track](https://tartanair.blob.core.windows.net/tartanair-testing1/tartanair-test-mono-release.tar.gz) (Size: 7.65 GB)
+* [Monocular track](http://airlab-share.andrew.cmu.edu/tartanair_test/tartanair-test-mono-release.tar.gz) (Size: 7.65 GB)
   
   MD5 hash: 009b52e7d7b224ffb8a203db294ac9fb
 
@@ -167,7 +155,7 @@ mono
 +-- MH007                             # monocular hard trajectory 7 
 ```
 
-* [Stereo track](https://tartanair.blob.core.windows.net/tartanair-testing1/tartanair-test-stereo-release.tar.gz) (Size: 17.51 GB)
+* [Stereo track](http://airlab-share.andrew.cmu.edu/tartanair_test/tartanair-test-stereo-release.tar.gz) (Size: 17.51 GB)
 
   MD5 hash: 8a3363ff2013f147c9495d5bb161c48e
 
@@ -204,7 +192,7 @@ stereo
 +-- SH007                                 # stereo hard trajectory 7 
 ```
 
-* [Both monocular and stereo tracks](https://tartanair.blob.core.windows.net/tartanair-testing1/tartanair-test-release.tar.gz) (Size: 25.16 GB)
+* [Both monocular and stereo tracks](http://airlab-share.andrew.cmu.edu/tartanair_test/tartanair-test-release.tar.gz) (Size: 25.16 GB)
 
   MD5 hash: ea176ca274135622cbf897c8fa462012 
 
