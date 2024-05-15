@@ -1,4 +1,4 @@
-# The dataset is back online! 
+# The dataset is moved to cloudflare! Thank [Scaled Foundation](https://scaledfoundations.ai/) for the support! 
 We are now hosting the dataset on our own server at CMU. The downloading speed might not be as fast as before. For researchers outside US, please consider using a good VPN. If anyone or any research group is interested in hosting our dataset, please contact wenshanw@andrew.cmu.edu. 
 
 
@@ -56,6 +56,10 @@ ROOT
 ### Download data to your local machine
 
 We provide a python script `download_training.py` for the data downloading. You can also take look at the [URL list](download_training_zipfiles.txt) to download the spesific files you want. 
+
+* Install dependencies
+
+  `pip install boto3`
 
 * Specify an output directory
 
@@ -124,12 +128,7 @@ python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow
 
 ## Download the testing data for the CVPR Visual SLAM challenge
 
-You can click the download links below. In Linux system, you can also run the following command to download all the files: 
-```
-wget -r -i download_cvpr_slam_test.txt
-``` 
-
-* [Monocular track](http://airlab-share.andrew.cmu.edu/tartanair_test/tartanair-test-mono-release.tar.gz) (Size: 7.65 GB)
+* [Monocular track](https://drive.google.com/file/d/1N9BkpQuibIyIBkLxVPUuoB-eDOMFqY8D/view?usp=sharing) (Size: 7.65 GB)
   
   MD5 hash: 009b52e7d7b224ffb8a203db294ac9fb
 
@@ -156,7 +155,7 @@ mono
 +-- MH007                             # monocular hard trajectory 7 
 ```
 
-* [Stereo track](http://airlab-share.andrew.cmu.edu/tartanair_test/tartanair-test-stereo-release.tar.gz) (Size: 17.51 GB)
+* [Stereo track](https://drive.google.com/file/d/1dIiN3IxWD_IVVDUKT-BdbX72-lyKUdkh/view?usp=sharing) (Size: 17.51 GB)
 
   MD5 hash: 8a3363ff2013f147c9495d5bb161c48e
 
@@ -193,7 +192,7 @@ stereo
 +-- SH007                                 # stereo hard trajectory 7 
 ```
 
-* [Both monocular and stereo tracks](http://airlab-share.andrew.cmu.edu/tartanair_test/tartanair-test-release.tar.gz) (Size: 25.16 GB)
+* [Both monocular and stereo tracks](https://drive.google.com/file/d/1N8qoU-oEjRKdaKSrHPWA-xsnRtofR_jJ/view?usp=sharing) (Size: 25.16 GB)
 
   MD5 hash: ea176ca274135622cbf897c8fa462012 
 

@@ -1,6 +1,8 @@
 from os import system, mkdir
 import argparse
-from os.path import isdir, isfile
+from os.path import isdir, isfile, join
+import boto3
+from botocore.exceptions import NoCredentialsError
 
 def get_args():
     parser = argparse.ArgumentParser(description='TartanAir')
@@ -48,7 +50,49 @@ def get_args():
 def _help():
     print ('')
 
+def download_from_cloudflare_r2(filelist, destination_path, bucket_name, access_key, secret_key, endpoint_url):
+    """
+    Downloads a file from Cloudflare R2 storage using S3 API.
+
+    Args:
+    - file_name (str): Name of the file in the bucket you want to download
+    - destination_path (str): Path to save the downloaded file locally
+    - bucket_name (str): The name of the Cloudflare R2 bucket
+    - access_key (str): Your Cloudflare R2 access key
+    - secret_key (str): Your Cloudflare R2 secret key
+    - endpoint_url (str): Endpoint URL for Cloudflare R2
+
+    Returns:
+    - str: A message indicating success or failure.
+    """
+
+    # Create an S3 client with the provided credentials and endpoint
+    s3 = boto3.client('s3', aws_access_key_id=access_key,
+                      aws_secret_access_key=secret_key,
+                      endpoint_url=endpoint_url)
+
+    for file_name in filelist:
+        target_file_name = join(destination_path, file_name.replace('/', '_').replace('tartanair_',''))
+        print('--')
+        if isfile(target_file_name):
+            print('Error: Target file {} already exists..'.format(target_file_name))
+            exit()
+        try:
+            print(f"  Downloading {file_name} from {bucket_name}...")
+            s3.download_file(bucket_name, file_name, target_file_name)
+            print(f"  Successfully downloaded {file_name} to {target_file_name}!")
+        except FileNotFoundError:
+            print(f"Error: The file {file_name} was not found in the bucket {bucket_name}.")
+        except NoCredentialsError:
+            print("Error: Credentials not available.")
+
+
 if __name__ == '__main__':
+    bucket_name = "tartanair-v1"
+    access_key = "be0116e42ced3fd52c32398b5003ecda"
+    secret_key = "103fab752dab348fa665dc744be9b8fb6f9cf04f82f9409d79c54a88661a0d40"
+    endpoint_url = "https://0a585e9484af268a716f8e6d3be53bbc.r2.cloudflarestorage.com"
+
     args = get_args()
 
     # output directory
@@ -124,38 +168,40 @@ if __name__ == '__main__':
 
     print('{} files are going to be downloaded...'.format(len(downloadlist)))
     for fileurl in downloadlist:
-        print (fileurl)
+        print ('  -', fileurl)
 
-    for fileurl in downloadlist:
-        zf = fileurl.split('/')
-        filename = zf[-1]
-        difflevel = zf[-2]
-        envname = zf[-3]
+    # for fileurl in downloadlist:
+    #     zf = fileurl.split('/')
+    #     filename = zf[-1]
+    #     difflevel = zf[-2]
+    #     envname = zf[-3]
 
-        envfolder = outdir + '/' + envname
-        if not isdir(envfolder):
-            mkdir(envfolder)
-            print('Created a new env folder {}..'.format(envfolder))
-        # else: 
-        #     print('Env folder {} already exists..'.format(envfolder))
+    #     envfolder = outdir + '/' + envname
+    #     if not isdir(envfolder):
+    #         mkdir(envfolder)
+    #         print('Created a new env folder {}..'.format(envfolder))
+    #     # else: 
+    #     #     print('Env folder {} already exists..'.format(envfolder))
 
-        levelfolder = envfolder + '/' + difflevel
-        if not isdir(levelfolder):
-            mkdir(levelfolder)
-            print('  Created a new level folder {}..'.format(levelfolder))
-        # else: 
-        #     print('Level folder {} already exists..'.format(levelfolder))
+    #     levelfolder = envfolder + '/' + difflevel
+    #     if not isdir(levelfolder):
+    #         mkdir(levelfolder)
+    #         print('  Created a new level folder {}..'.format(levelfolder))
+    #     # else: 
+    #     #     print('Level folder {} already exists..'.format(levelfolder))
 
-        targetfile = levelfolder + '/' + filename
-        if isfile(targetfile):
-            print('Target file {} already exists..'.format(targetfile))
-            exit()
+    #     targetfile = levelfolder + '/' + filename
+    #     if isfile(targetfile):
+    #         print('Target file {} already exists..'.format(targetfile))
+    #         exit()
 
-        # if args.azcopy:
-        #     cmd = 'azcopy copy ' + fileurl + ' ' + targetfile 
-        # else:
-        cmd = 'wget -r -O ' + targetfile + ' ' + fileurl
-        ret = system(cmd)
+    #     # if args.azcopy:
+    #     #     cmd = 'azcopy copy ' + fileurl + ' ' + targetfile 
+    #     # else:
+    #     cmd = 'wget -r -O ' + targetfile + ' ' + fileurl
+    #     ret = system(cmd)
 
-        if ret == 2: # ctrl-c
-            break
+    #     if ret == 2: # ctrl-c
+    #         break
+
+    download_from_cloudflare_r2(downloadlist, outdir, bucket_name, access_key, secret_key, endpoint_url)
