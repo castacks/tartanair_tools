@@ -50,7 +50,7 @@ def get_args():
 def _help():
     print ('')
 
-def download_from_cloudflare_r2(filelist, destination_path, bucket_name, access_key, secret_key, endpoint_url):
+def download_from_cloudflare_r2(s3, filelist, destination_path, bucket_name):
     """
     Downloads a file from Cloudflare R2 storage using S3 API.
 
@@ -66,10 +66,6 @@ def download_from_cloudflare_r2(filelist, destination_path, bucket_name, access_
     - str: A message indicating success or failure.
     """
 
-    # Create an S3 client with the provided credentials and endpoint
-    s3 = boto3.client('s3', aws_access_key_id=access_key,
-                      aws_secret_access_key=secret_key,
-                      endpoint_url=endpoint_url)
 
     for file_name in filelist:
         target_file_name = join(destination_path, file_name.replace('/', '_').replace('tartanair_',''))
@@ -86,6 +82,26 @@ def download_from_cloudflare_r2(filelist, destination_path, bucket_name, access_
         except NoCredentialsError:
             print("Error: Credentials not available.")
 
+def get_all_s3_objects(s3, bucket_name):
+    continuation_token = None
+    content_list = []
+    while True:
+        list_kwargs = dict(MaxKeys=1000, Bucket = bucket_name)
+        if continuation_token:
+            list_kwargs['ContinuationToken'] = continuation_token
+        response = s3.list_objects_v2(**list_kwargs)
+        content_list.extend(response.get('Contents', []))
+        if not response.get('IsTruncated'):  # At the end of the list?
+            break
+        continuation_token = response.get('NextContinuationToken')
+    return content_list
+
+def get_size(content_list, filelist):
+    keys_sizes = {rrr['Key']: rrr['Size'] for rrr in content_list}
+    total_size = 0
+    for ff in filelist:
+        total_size += keys_sizes[ff]
+    return total_size
 
 if __name__ == '__main__':
     bucket_name = "tartanair-v1"
@@ -170,6 +186,18 @@ if __name__ == '__main__':
     for fileurl in downloadlist:
         print ('  -', fileurl)
 
+    # Create an S3 client with the provided credentials and endpoint
+    s3 = boto3.client('s3', aws_access_key_id=access_key,
+                      aws_secret_access_key=secret_key,
+                      endpoint_url=endpoint_url)
+
+    # Print out how much space
+    content_list = get_all_s3_objects(s3, bucket_name)
+    all_size = get_size(content_list, downloadlist)
+    print('*** Total Size: {} GB ***'.format(all_size/1000000000))
+
+    download_from_cloudflare_r2(s3, downloadlist, outdir, bucket_name)
+
     # for fileurl in downloadlist:
     #     zf = fileurl.split('/')
     #     filename = zf[-1]
@@ -204,4 +232,3 @@ if __name__ == '__main__':
     #     if ret == 2: # ctrl-c
     #         break
 
-    download_from_cloudflare_r2(downloadlist, outdir, bucket_name, access_key, secret_key, endpoint_url)
