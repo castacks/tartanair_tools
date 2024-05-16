@@ -1,6 +1,5 @@
-# The dataset is moved to cloudflare! Thank [Scaled Foundation](https://scaledfoundations.ai/) for the support! 
-We are now hosting the dataset on our own server at CMU. The downloading speed might not be as fast as before. For researchers outside US, please consider using a good VPN. If anyone or any research group is interested in hosting our dataset, please contact wenshanw@andrew.cmu.edu. 
-
+The dataset is moved to cloudflare! Thank [Scaled Foundation](https://scaledfoundations.ai/) for the support! 
+If anyone or any research group is interested in hosting our dataset, please contact wenshanw@andrew.cmu.edu. 
 
 # TartanAir dataset: AirSim Simulation Dataset for Simultaneous Localization and Mapping
 This repository provides sample code and scripts for accessing the training and testing data, as well as evaluation tools. Please refer to [TartanAir](http://theairlab.org/tartanair-dataset) for more information about the dataset. 
