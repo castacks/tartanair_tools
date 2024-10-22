@@ -1,4 +1,4 @@
-The dataset is moved to cloudflare! Thank [Scaled Foundation](https://scaledfoundations.ai/) for the support! 
+The dataset is available from both cloudflare and the Airlab server! Thank [Scaled Foundation](https://scaledfoundations.ai/) for the support! 
 If anyone or any research group is interested in hosting our dataset, please contact wenshanw@andrew.cmu.edu. 
 
 # TartanAir dataset: AirSim Simulation Dataset for Simultaneous Localization and Mapping
@@ -54,11 +54,11 @@ ROOT
 
 ### Download data to your local machine
 
-We provide a python script `download_training.py` for the data downloading. You can also take look at the [URL list](download_training_zipfiles.txt) to download the spesific files you want. 
+We provide a python script `download_training.py` for the data downloading. You can also take a look at the [URL list](download_training_zipfiles.txt) to download the specific files you want. 
 
 * Install dependencies
 
-  `pip install boto3`
+  `pip install boto3 colorama minio`
 
 * Specify an output directory
 
@@ -98,29 +98,35 @@ We provide a python script `download_training.py` for the data downloading. You 
 
   [NO TAG]: both 'flow' and 'mask' files
 
+* Unzip the files after downloading: 
+
+  --unzip
+
 For example, download all the RGB images from the left camera:
 
 ```
-python download_training.py --output-dir OUTPUTDIR --rgb --only-left
+python download_training.py --output-dir OUTPUTDIR --rgb --only-left --unzip
 ```
 
 Download all the depth data from both cameras in hard level: 
 
 ```
-python download_training.py --output-dir OUTPUTDIR --depth --only-hard
+python download_training.py --output-dir OUTPUTDIR --depth --only-hard --unzip
 ```
 
 Download all optical flow data without flow-mask:
 
 ```
-python download_training.py --output-dir OUTPUTDIR --flow --only-flow
+python download_training.py --output-dir OUTPUTDIR --flow --only-flow --unzip
 ```
 
 Download all the files in the dataset (could be very slow due to the large size):
 
 ```
-python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow
+python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow --unzip
 ```
+
+Our data is hosted on two servers located in the United States. By default, it downloads from [AirLab](https://theairlab.org/) data server. If you encounter any network issues, please try adding `--cloudflare` for an alternative source. 
 
 ---
 

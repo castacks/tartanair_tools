@@ -1,8 +1,16 @@
 from os import system, mkdir
 import argparse
 from os.path import isdir, isfile, join
-import boto3
-from botocore.exceptions import NoCredentialsError
+from colorama import Fore, Style
+
+def print_error(msg):
+    print(Fore.RED + msg + Style.RESET_ALL)
+
+def print_warn(msg):
+    print(Fore.YELLOW + msg + Style.RESET_ALL)
+
+def print_highlight(msg):
+    print(Fore.GREEN + msg + Style.RESET_ALL)
 
 def get_args():
     parser = argparse.ArgumentParser(description='TartanAir')
@@ -40,8 +48,11 @@ def get_args():
     parser.add_argument('--only-mask', action='store_true', default=False,
                         help='download only mask wo/ flow')
 
-    # parser.add_argument('--azcopy', action='store_true', default=False,
-    #                     help='download the data with AzCopy, which is 10x faster in our test')
+    parser.add_argument('--cloudflare', action='store_true', default=False,
+                        help='download the data from Scale Foundation cloudflare')
+
+    parser.add_argument('--unzip', action='store_true', default=False,
+                        help='unzip the files after downloading')
 
     args = parser.parse_args()
 
@@ -50,66 +61,120 @@ def get_args():
 def _help():
     print ('')
 
-def download_from_cloudflare_r2(s3, filelist, destination_path, bucket_name):
-    """
-    Downloads a file from Cloudflare R2 storage using S3 API.
+class AirLabDownloader(object):
+    def __init__(self, bucket_name = 'tartanair') -> None:
+        from minio import Minio
+        endpoint_url = "airlab-share-01.andrew.cmu.edu:9000"
+        # public key (for donloading): 
+        access_key = "4e54CkGDFg2RmPjaQYmW"
+        secret_key = "mKdGwketlYUcXQwcPxuzinSxJazoyMpAip47zYdl"
 
-    Args:
-    - file_name (str): Name of the file in the bucket you want to download
-    - destination_path (str): Path to save the downloaded file locally
-    - bucket_name (str): The name of the Cloudflare R2 bucket
-    - access_key (str): Your Cloudflare R2 access key
-    - secret_key (str): Your Cloudflare R2 secret key
-    - endpoint_url (str): Endpoint URL for Cloudflare R2
+        self.client = Minio(endpoint_url, access_key=access_key, secret_key=secret_key, secure=True)
+        self.bucket_name = bucket_name
 
-    Returns:
-    - str: A message indicating success or failure.
-    """
+    def download(self, filelist, destination_path):
+        target_filelist = []
 
+        for source_file_name in filelist:
+            target_file_name = join(destination_path, source_file_name.replace('/', '_'))
+            target_filelist.append(target_file_name)
+            print('--')
+            if isfile(target_file_name):
+                print_error('Error: Target file {} already exists..'.format(target_file_name))
+                return False, None
 
-    for file_name in filelist:
-        target_file_name = join(destination_path, file_name.replace('/', '_').replace('tartanair_',''))
-        print('--')
-        if isfile(target_file_name):
-            print('Error: Target file {} already exists..'.format(target_file_name))
-            exit()
-        try:
-            print(f"  Downloading {file_name} from {bucket_name}...")
-            s3.download_file(bucket_name, file_name, target_file_name)
-            print(f"  Successfully downloaded {file_name} to {target_file_name}!")
-        except FileNotFoundError:
-            print(f"Error: The file {file_name} was not found in the bucket {bucket_name}.")
-        except NoCredentialsError:
-            print("Error: Credentials not available.")
+            print(f"  Downloading {source_file_name} from {self.bucket_name}...")
+            self.client.fget_object(self.bucket_name, source_file_name, target_file_name)
+            print(f"  Successfully downloaded {source_file_name} to {target_file_name}!")
 
-def get_all_s3_objects(s3, bucket_name):
-    continuation_token = None
-    content_list = []
-    while True:
-        list_kwargs = dict(MaxKeys=1000, Bucket = bucket_name)
-        if continuation_token:
-            list_kwargs['ContinuationToken'] = continuation_token
-        response = s3.list_objects_v2(**list_kwargs)
-        content_list.extend(response.get('Contents', []))
-        if not response.get('IsTruncated'):  # At the end of the list?
-            break
-        continuation_token = response.get('NextContinuationToken')
-    return content_list
+        return True, target_filelist
 
-def get_size(content_list, filelist):
-    keys_sizes = {rrr['Key']: rrr['Size'] for rrr in content_list}
-    total_size = 0
+class CloudFlareDownloader(object):
+    def __init__(self, bucket_name = "tartanair-v1") -> None:
+        import boto3
+        access_key = "f1ae9efebbc6a9a7cebbd949ba3a12de"
+        secret_key = "0a21fe771089d82e048ed0a1dd6067cb29a5666bf4fe95f7be9ba6f72482ec8b"
+        endpoint_url = "https://0a585e9484af268a716f8e6d3be53bbc.r2.cloudflarestorage.com"
+
+        self.bucket_name = bucket_name
+        self.s3 = boto3.client('s3', aws_access_key_id=access_key,
+                      aws_secret_access_key=secret_key,
+                      endpoint_url=endpoint_url)
+
+    def download(self, filelist, destination_path):
+        """
+        Downloads a file from Cloudflare R2 storage using S3 API.
+
+        Args:
+        - filelist (list): List of names of the files in the bucket you want to download
+        - destination_path (str): Path to save the downloaded file locally
+        - bucket_name (str): The name of the Cloudflare R2 bucket
+
+        Returns:
+        - str: A message indicating success or failure.
+        """
+
+        from botocore.exceptions import NoCredentialsError
+        target_filelist = []
+        for source_file_name in filelist:
+            target_file_name = join(destination_path, source_file_name.replace('/', '_'))
+            target_filelist.append(target_file_name)
+            print('--')
+            if isfile(target_file_name):
+                print_error('Error: Target file {} already exists..'.format(target_file_name))
+                return False, None
+            try:
+                print(f"  Downloading {source_file_name} from {self.bucket_name}...")
+                source_file_name = join('tartanair', source_file_name) # hard code that the cloudflare has a specific prefix folder
+                self.s3.download_file(self.bucket_name, source_file_name, target_file_name)
+                print(f"  Successfully downloaded {source_file_name} to {target_file_name}!")
+            except FileNotFoundError:
+                print_error(f"Error: The file {source_file_name} was not found in the bucket {self.bucket_name}.")
+                return False, None
+            except NoCredentialsError:
+                print_error("Error: Credentials not available.")
+                return False, None
+        return True, target_filelist
+
+    def get_all_s3_objects(self):
+        continuation_token = None
+        content_list = []
+        while True:
+            list_kwargs = dict(MaxKeys=1000, Bucket = self.bucket_name)
+            if continuation_token:
+                list_kwargs['ContinuationToken'] = continuation_token
+            response = self.s3.list_objects_v2(**list_kwargs)
+            content_list.extend(response.get('Contents', []))
+            if not response.get('IsTruncated'):  # At the end of the list?
+                break
+            continuation_token = response.get('NextContinuationToken')
+        return content_list
+
+def get_size(filesizelist, filelist):
+    keys_sizes = {rrr[0]: float(rrr[1]) for rrr in filesizelist}
+    total_size = 0.
     for ff in filelist:
         total_size += keys_sizes[ff]
     return total_size
 
-if __name__ == '__main__':
-    bucket_name = "tartanair-v1"
-    access_key = "be0116e42ced3fd52c32398b5003ecda"
-    secret_key = "103fab752dab348fa665dc744be9b8fb6f9cf04f82f9409d79c54a88661a0d40"
-    endpoint_url = "https://0a585e9484af268a716f8e6d3be53bbc.r2.cloudflarestorage.com"
+def unzip_files(zipfilelist, target_dir):
+    print_warn('Note unzipping will overwrite existing files ...')
+    for zipfile in zipfilelist:
+        if not isfile(zipfile) or (not zipfile.endswith('.zip')):
+            print_error("The zip file is missing {}".format(zipfile))
+            return False
+        print('  Unzipping {} ...'.format(zipfile))
+        cmd = 'unzip -q -o ' + zipfile + ' -d ' + target_dir
+        system(cmd)
+    print_highlight("Unzipping Completed! ")
 
+if __name__ == '__main__':
     args = get_args()
+
+    if args.cloudflare:
+        downloader = CloudFlareDownloader()
+    else:
+        downloader = AirLabDownloader()
 
     # output directory
     outdir = args.output_dir
@@ -162,10 +227,10 @@ if __name__ == '__main__':
     # read all the zip file urls
     with open('download_training_zipfiles.txt') as f:
         lines = f.readlines()
-    ziplist = [ll.strip() for ll in lines if ll.strip().endswith('.zip')]
+    zipsizelist = [ll.strip().split() for ll in lines if ll.strip().split()[0].endswith('.zip')]
 
     downloadlist = []
-    for zipfile in ziplist:
+    for zipfile, _ in zipsizelist:
         zf = zipfile.split('/')
         filename = zf[-1]
         difflevel = zf[-2]
@@ -182,22 +247,18 @@ if __name__ == '__main__':
         print('No file meets the condition!')
         exit()
 
-    print('{} files are going to be downloaded...'.format(len(downloadlist)))
+    print_highlight('{} files are going to be downloaded...'.format(len(downloadlist)))
     for fileurl in downloadlist:
         print ('  -', fileurl)
 
-    # Create an S3 client with the provided credentials and endpoint
-    s3 = boto3.client('s3', aws_access_key_id=access_key,
-                      aws_secret_access_key=secret_key,
-                      endpoint_url=endpoint_url)
+    all_size = get_size(zipsizelist, downloadlist)
+    print_highlight('*** Total Size: {} GB ***'.format(all_size))
 
-    # Print out how much space
-    content_list = get_all_s3_objects(s3, bucket_name)
-    all_size = get_size(content_list, downloadlist)
-    print('*** Total Size: {} GB ***'.format(all_size/1000000000))
+    # download_from_cloudflare_r2(s3, downloadlist, outdir, bucket_name)
+    res, downloadfilelist = downloader.download(downloadlist, outdir)
 
-    download_from_cloudflare_r2(s3, downloadlist, outdir, bucket_name)
-
+    if args.unzip:
+        unzip_files(downloadfilelist, outdir)
     # for fileurl in downloadlist:
     #     zf = fileurl.split('/')
     #     filename = zf[-1]
