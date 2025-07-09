@@ -64,10 +64,10 @@ def _help():
 class AirLabDownloader(object):
     def __init__(self, bucket_name = 'tartanair') -> None:
         from minio import Minio
-        endpoint_url = "airlab-share-01.andrew.cmu.edu:9000"
+        endpoint_url = "airlab-share-02.andrew.cmu.edu:9000"
         # public key (for donloading): 
-        access_key = "4e54CkGDFg2RmPjaQYmW"
-        secret_key = "mKdGwketlYUcXQwcPxuzinSxJazoyMpAip47zYdl"
+        access_key = "6TLJoPdrbQjau3DeLu8Y" #"4e54CkGDFg2RmPjaQYmW"
+        secret_key = "c9tq2XGuuJbx8XCgFXANabFWPhjrcZhoBiiLpxY2" #"mKdGwketlYUcXQwcPxuzinSxJazoyMpAip47zYdl"
 
         self.client = Minio(endpoint_url, access_key=access_key, secret_key=secret_key, secure=True)
         self.bucket_name = bucket_name
