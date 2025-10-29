@@ -2,6 +2,7 @@ from os import system, mkdir
 import argparse
 from os.path import isdir, isfile, join
 from colorama import Fore, Style
+from itertools import islice
 
 def print_error(msg):
     print(Fore.RED + msg + Style.RESET_ALL)
@@ -51,6 +52,9 @@ def get_args():
     parser.add_argument('--cloudflare', action='store_true', default=False,
                         help='download the data from Scale Foundation cloudflare')
 
+    parser.add_argument('--huggingface', action='store_true', default=False,
+                        help='download the data from Hugging Face')
+
     parser.add_argument('--unzip', action='store_true', default=False,
                         help='unzip the files after downloading')
 
@@ -88,6 +92,45 @@ class AirLabDownloader(object):
             print(f"  Successfully downloaded {source_file_name} to {target_file_name}!")
 
         return True, target_filelist
+
+def chunked_iterable(iterable, chunk_size):
+    """Yield successive chunks of given size from iterable."""
+    it = iter(iterable)
+    while True:
+        chunk = list(islice(it, chunk_size))
+        if not chunk:
+            break
+        yield chunk
+
+class HuggingfaceDownloader(object):
+    def __init__(self, bucket_name = 'tartanair') -> None:
+        from huggingface_hub import snapshot_download
+        self.chunk_size = 100  # Number of files to download per chunk from Hugging Face
+        self.repo_id = "theairlabcmu/tartanair"
+        self.downloader = snapshot_download
+
+    def download(self, filelist, output_dir):
+
+        success_target_files = []
+        for idx, chunk in enumerate(chunked_iterable(filelist, self.chunk_size), start=1):
+            print(f"\n📦 Chunk {idx}: Downloading {len(chunk)} files...")
+            try:
+                self.downloader(
+                    repo_id=self.repo_id,
+                    repo_type="dataset",
+                    local_dir=output_dir,
+                    allow_patterns=chunk
+                )
+            except Exception as e:
+                print_error(f"Error: Failed to download chunk {idx} due to {e}.")
+                continue
+            
+            success_target_files.extend([join(output_dir, f) for f in chunk])
+        
+        if len(success_target_files) == len(filelist):
+            return True, success_target_files
+        else:
+            return False, success_target_files
 
 class CloudFlareDownloader(object):
     def __init__(self, bucket_name = "tartanair-v1") -> None:
@@ -171,7 +214,9 @@ def unzip_files(zipfilelist, target_dir):
 if __name__ == '__main__':
     args = get_args()
 
-    if args.cloudflare:
+    if args.huggingface:
+        downloader = HuggingfaceDownloader()
+    elif args.cloudflare:
         downloader = CloudFlareDownloader()
     else:
         downloader = AirLabDownloader()

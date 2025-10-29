@@ -1,4 +1,6 @@
-The dataset is available from both cloudflare and the Airlab server! Thank [Scaled Foundation](https://scaledfoundations.ai/) for the support! 
+🔥 The TartanAir-V2 is released! Please checkout the [TartanAir-V2 website](tartanair.org)!
+
+The dataset is available from both Hugging Face and the Airlab server! 
 If anyone or any research group is interested in hosting our dataset, please contact wenshanw@andrew.cmu.edu. 
 
 # TartanAir dataset: AirSim Simulation Dataset for Simultaneous Localization and Mapping
@@ -126,7 +128,7 @@ Download all the files in the dataset (could be very slow due to the large size)
 python download_training.py --output-dir OUTPUTDIR --rgb --depth --seg --flow --unzip
 ```
 
-Our data is hosted on two servers located in the United States. By default, it downloads from [AirLab](https://theairlab.org/) data server. If you encounter any network issues, please try adding `--cloudflare` for an alternative source. 
+Our data is hosted on two servers located in the United States. By default, it downloads from [AirLab](https://theairlab.org/) data server. If you encounter any network issues, please try adding `--huggingface` for an alternative source. 
 
 ---
 
