@@ -1,4 +1,4 @@
-🔥 The TartanAir-V2 is released! Please checkout the [TartanAir-V2 website](tartanair.org)!
+🔥 The TartanAir-V2 is released! Please checkout the [TartanAir-V2 website](https://www.tartanair.org)!
 
 The dataset is available from both Hugging Face and the Airlab server! 
 If anyone or any research group is interested in hosting our dataset, please contact wenshanw@andrew.cmu.edu. 
