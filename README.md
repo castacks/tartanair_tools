@@ -60,7 +60,13 @@ We provide a python script `download_training.py` for the data downloading. You 
 
 * Install dependencies
 
-  `pip install boto3 colorama minio`
+  `pip install boto3 colorama`
+
+  > Note: as of PR \#airlab-rgw-fast-downloader, the AirLab download path uses
+  > `boto3` with parallel multipart range GETs against the new Ceph RGW endpoint
+  > (`airlab-cloud.andrew.cmu.edu:8080`). The old `minio` client and the
+  > `airlab-share-02:9000` MinIO server are no longer used. Throughput on a
+  > single host went from ~400 MB/s to ~1 GB/s in our tests.
 
 * Specify an output directory
 
