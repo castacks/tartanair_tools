@@ -59,6 +59,9 @@ def get_args():
     parser.add_argument('--unzip', action='store_true', default=False,
                         help='unzip the files after downloading')
 
+    parser.add_argument('--workers', type=int, default=8,
+                        help='number of worker threads for downloading')
+    
     args = parser.parse_args()
 
     return args
@@ -87,7 +90,7 @@ class AirLabDownloader(object):
     ENDPOINT_URL = "https://airlab-cloud.andrew.cmu.edu:8080"
     TENANT = "ac8533a83cff4d48bc8c608ad222d330"
 
-    def __init__(self, bucket_name='tartanair') -> None:
+    def __init__(self, bucket_name='tartanair', workers=8) -> None:
         try:
             import boto3
             from boto3.s3.transfer import TransferConfig
@@ -100,62 +103,49 @@ class AirLabDownloader(object):
                 "pip install boto3"
             )
 
-        cfg = Config(
-            s3={"addressing_style": "path"},
-            signature_version=UNSIGNED,
-            max_pool_connections=64,
-            retries={"max_attempts": 3, "mode": "standard"},
-        )
-        self.client = boto3.client("s3", endpoint_url=self.ENDPOINT_URL, config=cfg)
-        # botocore rejects `:` in bucket names; the request itself is fine.
-        self.client.meta.events.unregister(
-            "before-parameter-build.s3", validate_bucket_name
-        )
-        self.bucket_name = f"{self.TENANT}:{bucket_name}"
-        self.transfer_cfg = TransferConfig(
-            multipart_threshold=64 * 1024 * 1024,
-            multipart_chunksize=64 * 1024 * 1024,
-            max_concurrency=16,
-            use_threads=True,
-        )
+        endpoint_url = "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330"
+        self.client = boto3.client("s3", endpoint_url=endpoint_url, config=Config(signature_version=UNSIGNED))
+        self.bucket_name = bucket_name
+
         # Files in the bucket are large enough that 16 parallel files * 16
         # parallel ranges saturates a 10 G uplink. Tune lower if you have
         # less bandwidth or the upstream is throttling you.
-        self.workers = 16
+        self.workers = workers
 
     def _download_one(self, source_file_name, destination_path):
         target_file_name = join(destination_path, source_file_name.replace('/', '_'))
         if isfile(target_file_name):
             return source_file_name, target_file_name, "exists"
-        tmp = target_file_name + ".part"
+
         try:
-            self.client.download_file(
-                self.bucket_name, source_file_name, tmp,
-                Config=self.transfer_cfg,
-            )
-            os.replace(tmp, target_file_name)
+            resp = self.client.get_object(Bucket=self.bucket_name, Key=source_file_name)
+
+            with open(target_file_name, "wb") as f:
+                for chunk in resp["Body"].iter_chunks(chunk_size=1024 * 1024):
+                    if chunk:
+                        f.write(chunk)
         except Exception as e:
-            if isfile(tmp):
-                os.remove(tmp)
+            print_error(f"Error: Failed to download {source_file_name} due to {e}.")
             return source_file_name, target_file_name, f"error: {e}"
+
         return source_file_name, target_file_name, "ok"
 
     def download(self, filelist, destination_path):
         from concurrent.futures import ThreadPoolExecutor, as_completed
         import os as _os  # noqa: F401  -- kept for import side-effects
 
-        # Pre-flight: refuse if any target already exists (matches old behavior).
-        for source_file_name in filelist:
-            target_file_name = join(destination_path, source_file_name.replace('/', '_'))
-            if isfile(target_file_name):
-                print_error('Error: Target file {} already exists..'.format(target_file_name))
-                return False, None
+        # # Pre-flight: refuse if any target already exists (matches old behavior).
+        # for source_file_name in filelist:
+        #     target_file_name = join(destination_path, source_file_name.replace('/', '_'))
+        #     if isfile(target_file_name):
+        #         print_error('Error: Target file {} already exists..'.format(target_file_name))
+        #         return False, None
 
         target_filelist = []
         had_error = False
         print_highlight(
             f"Downloading {len(filelist)} files in parallel "
-            f"(workers={self.workers}, ranges/file={self.transfer_cfg.max_concurrency})..."
+            f"(workers={self.workers})..."
         )
         with ThreadPoolExecutor(max_workers=self.workers) as pool:
             futs = {
@@ -303,7 +293,7 @@ if __name__ == '__main__':
     elif args.cloudflare:
         downloader = CloudFlareDownloader()
     else:
-        downloader = AirLabDownloader()
+        downloader = AirLabDownloader(workers=args.workers)
 
     # output directory
     outdir = args.output_dir
