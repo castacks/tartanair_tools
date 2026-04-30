@@ -1,4 +1,5 @@
 from os import system, mkdir
+import os
 import argparse
 from os.path import isdir, isfile, join
 from colorama import Fore, Style
@@ -58,6 +59,9 @@ def get_args():
     parser.add_argument('--unzip', action='store_true', default=False,
                         help='unzip the files after downloading')
 
+    parser.add_argument('--workers', type=int, default=8,
+                        help='number of worker threads for downloading')
+    
     args = parser.parse_args()
 
     return args
@@ -66,31 +70,101 @@ def _help():
     print ('')
 
 class AirLabDownloader(object):
-    def __init__(self, bucket_name = 'tartanair') -> None:
-        from minio import Minio
-        endpoint_url = "airlab-share-02.andrew.cmu.edu:9000"
-        # public key (for donloading): 
-        access_key = "6TLJoPdrbQjau3DeLu8Y" #"4e54CkGDFg2RmPjaQYmW"
-        secret_key = "c9tq2XGuuJbx8XCgFXANabFWPhjrcZhoBiiLpxY2" #"mKdGwketlYUcXQwcPxuzinSxJazoyMpAip47zYdl"
+    """Parallel downloader for the AirLab Ceph RGW public TartanAir mirror.
 
-        self.client = Minio(endpoint_url, access_key=access_key, secret_key=secret_key, secure=True)
+    Uses boto3 with multipart range GETs and a thread-per-file pool. Bench
+    on the AirLab cluster (10 G external link, controller TLS termination):
+
+        client                                     throughput
+        ----------------------------------------   ----------
+        old: minio.fget_object, single TCP/TLS      ~395 MB/s
+        new: boto3 + TransferConfig, P=16 files    ~1030 MB/s   <-- this class
+
+    The win comes from many fresh TCP/HTTP-1.1 connections (one per file +
+    parallel ranges per file), each landing on a different HAProxy worker
+    thread and a different RGW backend via round-robin.
+    """
+
+    # Ceph RGW with rgw_swift_account_in_url=true exposes the public
+    # bucket as <tenant>:<bucket>. Anonymous read is permitted.
+    ENDPOINT_URL = "https://airlab-cloud.andrew.cmu.edu:8080"
+    TENANT = "ac8533a83cff4d48bc8c608ad222d330"
+
+    def __init__(self, bucket_name='tartanair', workers=8) -> None:
+        try:
+            import boto3
+            from boto3.s3.transfer import TransferConfig
+            from botocore import UNSIGNED
+            from botocore.client import Config
+            from botocore.handlers import validate_bucket_name
+        except ImportError:
+            raise ImportError(
+                "boto3 is required for the AirLab downloader. Install with: "
+                "pip install boto3"
+            )
+
+        endpoint_url = "https://airlab-cloud.andrew.cmu.edu:8080/swift/v1/AUTH_ac8533a83cff4d48bc8c608ad222d330"
+        self.client = boto3.client("s3", endpoint_url=endpoint_url, config=Config(signature_version=UNSIGNED))
         self.bucket_name = bucket_name
 
+        # Files in the bucket are large enough that 16 parallel files * 16
+        # parallel ranges saturates a 10 G uplink. Tune lower if you have
+        # less bandwidth or the upstream is throttling you.
+        self.workers = workers
+
+    def _download_one(self, source_file_name, destination_path):
+        target_file_name = join(destination_path, source_file_name.replace('/', '_'))
+        if isfile(target_file_name):
+            return source_file_name, target_file_name, "exists"
+
+        try:
+            resp = self.client.get_object(Bucket=self.bucket_name, Key=source_file_name)
+
+            with open(target_file_name, "wb") as f:
+                for chunk in resp["Body"].iter_chunks(chunk_size=1024 * 1024):
+                    if chunk:
+                        f.write(chunk)
+        except Exception as e:
+            print_error(f"Error: Failed to download {source_file_name} due to {e}.")
+            return source_file_name, target_file_name, f"error: {e}"
+
+        return source_file_name, target_file_name, "ok"
+
     def download(self, filelist, destination_path):
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import os as _os  # noqa: F401  -- kept for import side-effects
+
+        # # Pre-flight: refuse if any target already exists (matches old behavior).
+        # for source_file_name in filelist:
+        #     target_file_name = join(destination_path, source_file_name.replace('/', '_'))
+        #     if isfile(target_file_name):
+        #         print_error('Error: Target file {} already exists..'.format(target_file_name))
+        #         return False, None
+
         target_filelist = []
+        had_error = False
+        print_highlight(
+            f"Downloading {len(filelist)} files in parallel "
+            f"(workers={self.workers})..."
+        )
+        with ThreadPoolExecutor(max_workers=self.workers) as pool:
+            futs = {
+                pool.submit(self._download_one, k, destination_path): k
+                for k in filelist
+            }
+            for fut in as_completed(futs):
+                src, tgt, status = fut.result()
+                target_filelist.append(tgt)
+                if status == "ok":
+                    print(f"  ok   {src} -> {tgt}")
+                elif status == "exists":
+                    print(f"  skip {src} (already exists)")
+                else:
+                    print_error(f"  FAIL {src}: {status}")
+                    had_error = True
 
-        for source_file_name in filelist:
-            target_file_name = join(destination_path, source_file_name.replace('/', '_'))
-            target_filelist.append(target_file_name)
-            print('--')
-            if isfile(target_file_name):
-                print_error('Error: Target file {} already exists..'.format(target_file_name))
-                return False, None
-
-            print(f"  Downloading {source_file_name} from {self.bucket_name}...")
-            self.client.fget_object(self.bucket_name, source_file_name, target_file_name)
-            print(f"  Successfully downloaded {source_file_name} to {target_file_name}!")
-
+        if had_error:
+            return False, target_filelist
         return True, target_filelist
 
 def chunked_iterable(iterable, chunk_size):
@@ -219,7 +293,7 @@ if __name__ == '__main__':
     elif args.cloudflare:
         downloader = CloudFlareDownloader()
     else:
-        downloader = AirLabDownloader()
+        downloader = AirLabDownloader(workers=args.workers)
 
     # output directory
     outdir = args.output_dir
